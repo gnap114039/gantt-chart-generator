@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+
+# Claude Code
+.claude/
+
+# User data (personal CSV / HTML exports)
+data/
+
+# Empty placeholder folders
+lib/

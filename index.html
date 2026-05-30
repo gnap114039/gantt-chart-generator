@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>甘特圖生成器</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="toolbar">
+      <span class="toolbar-title" data-i18n="appTitle">甘特圖生成器</span>
+      <div class="toolbar-actions">
+        <button id="btn-add-task" class="btn btn-primary" data-i18n="btnAddTask">+ 新增任務</button>
+        <div class="btn-group">
+          <button id="btn-mode-hierarchy" class="btn btn-secondary active" data-i18n="btnHierarchy">☰ 層級</button>
+          <button id="btn-mode-subpanel" class="btn btn-secondary" data-i18n="btnSubpanel">⊞ 分頁</button>
+        </div>
+        <div class="btn-group">
+          <button id="btn-open-csv" class="btn btn-secondary" data-i18n="btnOpenCsv">開啟 CSV</button>
+          <button id="btn-save-csv" class="btn btn-secondary" disabled data-i18n="btnSaveCsv">儲存</button>
+          <button id="btn-export-csv" class="btn btn-secondary" data-i18n="btnExportCsv">匯出</button>
+        </div>
+        <span id="file-indicator" class="file-indicator" style="display:none"></span>
+        <label class="btn btn-secondary" for="csv-input" style="display:none">匯入</label>
+        <input type="file" id="csv-input" accept=".csv" style="display:none" />
+        <button id="btn-export" class="btn btn-secondary" data-i18n="btnExportImg">匯出圖片</button>
+        <button id="btn-copy" class="btn btn-secondary" data-i18n="btnCopyImg">複製圖片</button>
+        <button id="btn-export-html" class="btn btn-secondary" data-i18n="btnExportHtml">匯出 HTML</button>
+        <div class="btn-group">
+          <button id="btn-lang-zh" class="btn btn-secondary btn-sm active">中</button>
+          <button id="btn-lang-en" class="btn btn-secondary btn-sm">EN</button>
+        </div>
+        <button id="btn-help" class="btn btn-help" title="使用說明 / Help">？</button>
+      </div>
+    </header>
+
+    <div class="main-area">
+      <div class="gantt-container" id="gantt-container">
+        <div class="gantt-left" id="gantt-left">
+          <div class="gantt-left-header">
+            <span id="project-name" contenteditable="true" spellcheck="false" title="點擊編輯專案名稱"></span>
+          </div>
+          <div class="task-list" id="task-list"></div>
+        </div>
+        <div class="gantt-right" id="gantt-right">
+          <div class="timeline-header" id="timeline-header"></div>
+          <div class="chart-area" id="chart-area">
+            <svg id="gantt-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- 子任務面板（分頁模式） -->
+      <div id="sub-panel" style="display:none">
+        <div class="sub-panel-header">
+          <span class="sub-panel-label" data-i18n="subpanelLabel">子任務</span>
+          <span id="sub-panel-title"></span>
+          <button id="btn-add-subtask-main" class="btn btn-primary btn-sm" data-i18n="btnAddSubtaskMain">+ 新增子任務</button>
+          <button id="btn-close-subpanel" class="btn-icon" title="關閉">✕</button>
+        </div>
+        <div class="gantt-container sub-gantt-container">
+          <div class="gantt-left">
+            <div class="gantt-left-header" style="font-size:11px;color:#667085;" data-i18n="subpanelTaskHeader">任務名稱</div>
+            <div class="task-list" id="sub-task-list"></div>
+          </div>
+          <div class="gantt-right" id="sub-gantt-right">
+            <div class="timeline-header" id="sub-timeline-header"></div>
+            <div class="chart-area" id="sub-chart-area">
+              <svg id="sub-gantt-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 任務編輯彈窗 -->
+  <div class="modal-overlay" id="modal-overlay" style="display:none">
+    <div class="modal" id="task-modal">
+      <h2 id="modal-title">新增任務</h2>
+      <form id="task-form">
+        <input type="hidden" id="task-id" />
+        <input type="hidden" id="task-parent-id" />
+        <div class="form-group">
+          <label data-i18n="labelName">任務名稱</label>
+          <input type="text" id="task-name" required data-i18n-placeholder="placeholderName" placeholder="輸入任務名稱" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="labelStart">開始日期</label>
+            <input type="date" id="task-start" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="labelEnd">結束日期</label>
+            <input type="date" id="task-end" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="labelColor">顏色</label>
+            <input type="color" id="task-color" value="#4A90D9" />
+          </div>
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="task-milestone" />
+              <span data-i18n="labelMilestone">里程碑</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-section-label" data-i18n="sectionActual">實際執行</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="labelActualStart">實際開始</label>
+            <input type="date" id="task-actual-start" />
+          </div>
+          <div class="form-group">
+            <label data-i18n="labelActualEnd">實際結束</label>
+            <input type="date" id="task-actual-end" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label><span data-i18n="labelProgress">完成進度</span> <span id="progress-display">0%</span></label>
+          <input type="range" id="task-progress" min="0" max="100" value="0" />
+        </div>
+        <div class="form-group">
+          <label data-i18n="labelDeps">依賴任務（前置）</label>
+          <select id="task-dependencies" multiple size="3"></select>
+          <small data-i18n="hintDeps">按住 Ctrl/Cmd 可多選</small>
+        </div>
+
+        <!-- 子任務管理（僅編輯頂層任務時顯示） -->
+        <div id="subtask-section" style="display:none">
+          <div class="form-section-label" data-i18n="sectionSubtasks">子任務</div>
+          <div id="subtask-list"></div>
+          <button type="button" id="btn-add-subtask" class="btn btn-secondary btn-sm" style="margin-top:8px" data-i18n="btnAddSubtask">+ 新增子任務</button>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="btn-delete-task" class="btn btn-danger" style="display:none" data-i18n="btnDelete">刪除</button>
+          <button type="button" id="btn-cancel" class="btn btn-secondary" data-i18n="btnCancel">取消</button>
+          <button type="submit" class="btn btn-primary" data-i18n="btnSave">儲存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 使用說明 Help Modal -->
+  <div class="modal-overlay" id="help-overlay" style="display:none">
+    <div class="modal help-modal">
+      <div class="help-modal-header">
+        <h2>使用說明 / Help</h2>
+        <div class="help-lang-toggle">
+          <button class="btn btn-secondary btn-sm active" id="help-lang-zh">中文</button>
+          <button class="btn btn-secondary btn-sm" id="help-lang-en">English</button>
+        </div>
+        <button class="btn-icon" id="btn-close-help" title="關閉">✕</button>
+      </div>
+
+      <!-- 中文內容 -->
+      <div id="help-content-zh">
+        <div class="help-section">
+          <div class="help-section-title">📋 基本操作</div>
+          <div class="help-item"><span class="help-action">新增任務</span>點擊工具列的 <b>+ 新增任務</b></div>
+          <div class="help-item"><span class="help-action">編輯任務</span>點擊甘特圖中的任務橫條，開啟編輯彈窗</div>
+          <div class="help-item"><span class="help-action">刪除任務</span>開啟編輯彈窗後，點擊左下角的 <b>刪除</b> 按鈕</div>
+          <div class="help-item"><span class="help-action">專案名稱</span>點擊左上角的專案名稱即可直接編輯</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">🖱️ 拖曳操作</div>
+          <div class="help-item"><span class="help-action">移動任務</span>拖曳<b>計劃條</b>（外框）或<b>實際條</b>（實色）的中央左右移動</div>
+          <div class="help-item"><span class="help-action">調整日期</span>拖曳橫條的<b>左側邊緣</b>調整開始日，<b>右側邊緣</b>調整結束日</div>
+          <div class="help-item"><span class="help-action">吸附</span>日期自動吸附至整天</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">🗂️ 子任務與視圖模式</div>
+          <div class="help-item"><span class="help-action">新增子任務</span>開啟父任務的編輯彈窗，在「子任務」區塊點擊 <b>+ 新增子任務</b></div>
+          <div class="help-item"><span class="help-action">展開／收合（層級模式）</span>點擊父任務橫條，子任務縮排展開於下方</div>
+          <div class="help-item"><span class="help-action">子面板模式</span>切換至 <b>⊞ 分頁</b> 後，點擊父任務，在下方展開獨立子甘特圖</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">💾 CSV 檔案</div>
+          <div class="help-item"><span class="help-action">開啟</span>點擊 <b>開啟 CSV</b>，記錄檔案位置以便直接回存</div>
+          <div class="help-item"><span class="help-action">儲存</span>點擊 <b>儲存</b> 或按 <span class="help-key">Ctrl</span><span class="help-key">S</span>，寫回目前開啟的檔案</div>
+          <div class="help-item"><span class="help-action">另存</span>點擊 <b>匯出</b> 另存新的 CSV 副本，不影響目前開啟的檔案</div>
+          <div class="help-item"><span class="help-action">未儲存提示</span>有未儲存變更時，檔案名稱顯示變成琥珀色並出現 <b>●</b></div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">🖼️ 匯出圖片</div>
+          <div class="help-item"><span class="help-action">下載 PNG</span>點擊 <b>匯出圖片</b>，儲存高解析度 PNG（2× 縮放）</div>
+          <div class="help-item"><span class="help-action">複製到剪貼簿</span>點擊 <b>複製圖片</b>，可直接貼至 Word、Slides 等文件（需 Chrome 84+）</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">📤 匯出 HTML 預覽</div>
+          <div class="help-item"><span class="help-action">匯出 HTML</span>點擊 <b>匯出 HTML</b>，生成單一可攜帶的 .html 檔案，任何人用瀏覽器開啟即可查看甘特圖並展開子任務階層</div>
+          <div class="help-item"><span class="help-action">注意</span>需在 VS Code Live Preview 或 GitHub Pages 下使用，不支援直接雙擊 file:// 開啟</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">🌐 語言切換</div>
+          <div class="help-item"><span class="help-action">切換語言</span>點擊工具列右側的 <b>中</b> / <b>EN</b> 按鈕，介面即時切換中英文，設定儲存於瀏覽器</div>
+        </div>
+      </div>
+
+      <!-- English content -->
+      <div id="help-content-en" style="display:none">
+        <div class="help-section">
+          <div class="help-section-title">📋 Basic Operations</div>
+          <div class="help-item"><span class="help-action">Add task</span>Click <b>+ Add Task</b> in the toolbar</div>
+          <div class="help-item"><span class="help-action">Edit task</span>Click any task bar to open the edit dialog</div>
+          <div class="help-item"><span class="help-action">Delete task</span>Open edit dialog → click <b>Delete</b> (bottom-left)</div>
+          <div class="help-item"><span class="help-action">Project name</span>Click the project name (top-left) to edit inline</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">🖱️ Drag &amp; Drop</div>
+          <div class="help-item"><span class="help-action">Move task</span>Drag the center of a bar (plan or actual) left / right</div>
+          <div class="help-item"><span class="help-action">Resize</span>Drag the left edge to change start; right edge to change end</div>
+          <div class="help-item"><span class="help-action">Snapping</span>Dates snap to whole days automatically</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">🗂️ Sub-tasks &amp; View Modes</div>
+          <div class="help-item"><span class="help-action">Add sub-task</span>Open a parent task → click <b>+ Add Sub-task</b></div>
+          <div class="help-item"><span class="help-action">Expand / Collapse</span>Click a parent task bar to toggle its sub-tasks (Hierarchy mode)</div>
+          <div class="help-item"><span class="help-action">Sub-panel mode</span>Switch to <b>⊞ Sub-panel</b>, click a parent to open sub-chart below</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">💾 CSV Files</div>
+          <div class="help-item"><span class="help-action">Open</span>Click <b>Open CSV</b> — remembers the file for in-place saving</div>
+          <div class="help-item"><span class="help-action">Save</span><b>Save</b> button or <span class="help-key">Ctrl</span><span class="help-key">S</span> — writes back to the open file</div>
+          <div class="help-item"><span class="help-action">Export</span>Downloads a new CSV copy; does not update the open file</div>
+          <div class="help-item"><span class="help-action">Unsaved indicator</span>Filename turns amber with a dot (●) when changes are unsaved</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">🖼️ Export Image</div>
+          <div class="help-item"><span class="help-action">Download PNG</span>Click <b>Export Image</b> — saves a 2× resolution PNG</div>
+          <div class="help-item"><span class="help-action">Copy to clipboard</span>Click <b>Copy Image</b> — paste into Word, Slides, etc. (Chrome 84+)</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">📤 Export HTML Preview</div>
+          <div class="help-item"><span class="help-action">Export HTML</span>Click <b>Export HTML</b> to generate a self-contained .html file — anyone can open it in a browser to view the chart and expand the task hierarchy</div>
+          <div class="help-item"><span class="help-action">Note</span>Requires VS Code Live Preview or GitHub Pages; does not work when opened directly as file://</div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">🌐 Language</div>
+          <div class="help-item"><span class="help-action">Switch language</span>Click <b>中</b> / <b>EN</b> in the toolbar to toggle the UI language instantly; preference is saved in the browser</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/drag.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
