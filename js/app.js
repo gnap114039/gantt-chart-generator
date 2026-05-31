@@ -2,6 +2,23 @@ const DATA_VERSION = 3;
 let currentFileHandle = null;
 let isDirty = false;
 
+function isDarkMode() {
+  return document.documentElement.getAttribute('data-theme') === 'dark';
+}
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('gantt_theme', theme);
+  const btn = document.getElementById('btn-theme');
+  if (btn) {
+    btn.textContent = theme === 'dark' ? '☀' : '🌙';
+    btn.title = theme === 'dark' ? '切換淺色模式' : '切換深色模式';
+  }
+}
+function initTheme() {
+  const saved = localStorage.getItem('gantt_theme');
+  setTheme(saved || 'light');
+}
+
 // Called by data.js on every localStorage write
 window._ganttDataChanged = () => {
   if (!currentFileHandle) return;
@@ -19,6 +36,7 @@ function initApp() {
   loadTasks();
   if (!getTasks().length) seedSampleData();
 
+  initTheme();
   initModal();
   applyLang();
   render();
@@ -75,6 +93,12 @@ function initApp() {
       e.preventDefault();
       e.returnValue = '';
     }
+  });
+
+  // Theme toggle
+  document.getElementById('btn-theme').addEventListener('click', () => {
+    setTheme(isDarkMode() ? 'light' : 'dark');
+    render();
   });
 
   // Language toggle

@@ -49,6 +49,25 @@ function hexToRgb(hex) {
   const b = parseInt(hex.slice(5, 7), 16);
   return `${r},${g},${b}`;
 }
+function svgTheme(light, dark) {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? dark : light;
+}
+function effectiveColor(hex) {
+  if (document.documentElement.getAttribute('data-theme') !== 'dark') return hex;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  if (lum < 0.35) {
+    const f = 0.55;
+    const nr = Math.round(r + (255 - r) * f);
+    const ng = Math.round(g + (255 - g) * f);
+    const nb = Math.round(b + (255 - b) * f);
+    return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
+  }
+  return hex;
+}
+
 function svgEl(tag, attrs = {}, text = null) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
@@ -154,21 +173,21 @@ function renderTimelineHeaderTo(containerId, ctx) {
     if (month !== curMonth) {
       if (curMonth !== null) {
         const mw = x - monthStartX;
-        monthRow.appendChild(svgEl('rect', { x: monthStartX, y: 0, width: mw, height: 22, fill: 'none', stroke: '#d0d5dd', 'stroke-width': 1 }));
-        monthRow.appendChild(svgEl('text', { x: monthStartX + 6, y: 15, 'font-size': 11, fill: '#667085', 'font-family': 'system-ui,sans-serif' }, curMonth));
+        monthRow.appendChild(svgEl('rect', { x: monthStartX, y: 0, width: mw, height: 22, fill: 'none', stroke: svgTheme('#d0d5dd', '#30363d'), 'stroke-width': 1 }));
+        monthRow.appendChild(svgEl('text', { x: monthStartX + 6, y: 15, 'font-size': 11, fill: svgTheme('#667085', '#8b949e'), 'font-family': 'system-ui,sans-serif' }, curMonth));
       }
       curMonth = month;
       monthStartX = x;
     }
     const isWE = d.getDay() === 0 || d.getDay() === 6;
-    dayRow.appendChild(svgEl('rect', { x, y: 22, width: ctx.dayWidth, height: 26, fill: isWE ? '#f9fafb' : 'none', stroke: '#e4e7ec', 'stroke-width': 0.5 }));
-    dayRow.appendChild(svgEl('text', { x: x + ctx.dayWidth / 2, y: 37, 'text-anchor': 'middle', 'font-size': 10, fill: isWE ? '#9aa5b4' : '#344054', 'font-family': 'system-ui,sans-serif' }, d.getDate()));
+    dayRow.appendChild(svgEl('rect', { x, y: 22, width: ctx.dayWidth, height: 26, fill: isWE ? svgTheme('#f9fafb', '#161924') : 'none', stroke: svgTheme('#e4e7ec', '#30363d'), 'stroke-width': 0.5 }));
+    dayRow.appendChild(svgEl('text', { x: x + ctx.dayWidth / 2, y: 37, 'text-anchor': 'middle', 'font-size': 10, fill: isWE ? svgTheme('#9aa5b4', '#6e7681') : svgTheme('#344054', '#c9d1d9'), 'font-family': 'system-ui,sans-serif' }, d.getDate()));
   }
 
   if (curMonth !== null) {
     const mw = ctx.totalDays * ctx.dayWidth - monthStartX;
-    monthRow.appendChild(svgEl('rect', { x: monthStartX, y: 0, width: mw, height: 22, fill: 'none', stroke: '#d0d5dd', 'stroke-width': 1 }));
-    monthRow.appendChild(svgEl('text', { x: monthStartX + 6, y: 15, 'font-size': 11, fill: '#667085', 'font-family': 'system-ui,sans-serif' }, curMonth));
+    monthRow.appendChild(svgEl('rect', { x: monthStartX, y: 0, width: mw, height: 22, fill: 'none', stroke: svgTheme('#d0d5dd', '#30363d'), 'stroke-width': 1 }));
+    monthRow.appendChild(svgEl('text', { x: monthStartX + 6, y: 15, 'font-size': 11, fill: svgTheme('#667085', '#8b949e'), 'font-family': 'system-ui,sans-serif' }, curMonth));
   }
   svg.appendChild(monthRow);
   svg.appendChild(dayRow);
@@ -238,19 +257,21 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
 
     if (task.isMilestone) {
       const cx = startX, cy = rowTop + rh / 2;
+      const color = effectiveColor(task.color);
       const diamond = svgEl('polygon', {
         points: `${cx},${cy - MILESTONE_SIZE} ${cx + MILESTONE_SIZE},${cy} ${cx},${cy + MILESTONE_SIZE} ${cx - MILESTONE_SIZE},${cy}`,
-        fill: task.color, stroke: 'none', class: 'task-bar milestone', 'data-id': task.id,
+        fill: color, stroke: 'none', class: 'task-bar milestone', 'data-id': task.id,
       });
       diamond.style.cursor = 'pointer';
       barGroup.appendChild(diamond);
-      const label = svgEl('text', { x: cx + MILESTONE_SIZE + 4, y: cy + 4, 'font-size': 11, fill: '#344054', 'font-family': 'system-ui,sans-serif', 'data-id': task.id }, task.name);
+      const label = svgEl('text', { x: cx + MILESTONE_SIZE + 4, y: cy + 4, 'font-size': 11, fill: svgTheme('#344054', '#c9d1d9'), 'font-family': 'system-ui,sans-serif', 'data-id': task.id }, task.name);
       label.style.pointerEvents = 'none';
       barGroup.appendChild(label);
     } else {
       const planWidth = Math.max(endX - startX, ctx.dayWidth);
       const g = svgEl('g', { class: 'task-group', 'data-id': task.id });
-      const rgb = hexToRgb(task.color);
+      const color = effectiveColor(task.color);
+      const rgb = hexToRgb(color);
       const planY = rowTop + (flatItems[i].level > 0 ? SUB_BAR_OFFSET : Math.round((rh - BARS_TOTAL_H) / 2));
 
       // Plan bar
@@ -363,7 +384,7 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
 
   const defs = svgEl('defs');
   const marker = svgEl('marker', { id: `arrow-${svgId}`, markerWidth: 8, markerHeight: 8, refX: 6, refY: 3, orient: 'auto' });
-  marker.appendChild(svgEl('path', { d: 'M0,0 L0,6 L8,3 z', fill: '#94a3b8' }));
+  marker.appendChild(svgEl('path', { d: 'M0,0 L0,6 L8,3 z', fill: svgTheme('#94a3b8', '#4a5580') }));
   defs.appendChild(marker);
   svg.appendChild(defs);
 
@@ -373,8 +394,8 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
     const d = addDays(ctx.startDate, i);
     const x = i * ctx.dayWidth;
     const isWE = d.getDay() === 0 || d.getDay() === 6;
-    if (isWE) grid.appendChild(svgEl('rect', { x, y: 0, width: ctx.dayWidth, height: ctx.svgHeight, fill: '#f9fafb', opacity: 0.6 }));
-    grid.appendChild(svgEl('line', { x1: x, y1: 0, x2: x, y2: ctx.svgHeight, stroke: '#e4e7ec', 'stroke-width': 0.5 }));
+    if (isWE) grid.appendChild(svgEl('rect', { x, y: 0, width: ctx.dayWidth, height: ctx.svgHeight, fill: svgTheme('#f9fafb', '#161924'), opacity: 0.6 }));
+    grid.appendChild(svgEl('line', { x1: x, y1: 0, x2: x, y2: ctx.svgHeight, stroke: svgTheme('#e4e7ec', '#21262d'), 'stroke-width': 0.5 }));
   }
   svg.appendChild(grid);
 
@@ -401,7 +422,7 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
       const taskY = getRowY(i, flatItems) + getRowHeight(i, flatItems) / 2;
       depGroup.appendChild(svgEl('path', {
         d: `M ${depAX} ${depY} C ${depAX + 20} ${depY} ${taskStartX - 20} ${taskY} ${taskStartX} ${taskY}`,
-        stroke: '#94a3b8', 'stroke-width': 1.5, fill: 'none', 'marker-end': `url(#arrow-${svgId})`,
+        stroke: svgTheme('#94a3b8', '#4a5580'), 'stroke-width': 1.5, fill: 'none', 'marker-end': `url(#arrow-${svgId})`,
       }));
     });
   });

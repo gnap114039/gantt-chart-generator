@@ -78,6 +78,7 @@ gantt_chart_generator/
 | `gantt_view_mode` | `'hierarchy'` 或 `'subpanel'` |
 | `gantt_version` | 資料版本號（目前為 3） |
 | `gantt_lang` | `'zh'` 或 `'en'`，預設 `'zh'` |
+| `gantt_theme` | `'light'` 或 `'dark'`，預設 `'light'` |
 
 > 版本號升級時會清除舊資料並重新產生範例。
 
@@ -171,7 +172,7 @@ id,name,start,end,color,milestone,actualStart,actualEnd,progress,dependencies,pa
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ Toolbar: 專案名稱(可編輯) | + 新增任務 | ☰ 層級 ⊞ 分頁 |                     │
 │          開啟CSV 儲存 匯出 | 📄 filename.csv | 匯出圖片 複製圖片              │
-│          匯出HTML | 中 EN | ？                                                │
+│          匯出HTML | 中 EN | 🌙 | ？                                           │
 ├──────────────┬───────────────────────────────────────────────────────────────┤
 │ 任務清單（左）│ 時間軸表頭（sticky）                                          │
 │ 200px 固定   │────────────────────────────────────────────────────────────── │
@@ -218,6 +219,13 @@ id,name,start,end,color,milestone,actualStart,actualEnd,progress,dependencies,pa
 - `setLang(lang)` — 設定語言並寫入 localStorage（key: `gantt_lang`）
 - `applyLang()` — 更新所有 `data-i18n` / `data-i18n-placeholder` 屬性的元素
 - 語言切換後呼叫 `applyLang()` 再 `render()`，確保動態渲染的文字也同步更新
+
+### 深色模式（Dark Mode）
+
+- 工具列 `🌙 / ☀` 按鈕手動切換，偏好儲存於 localStorage（key: `gantt_theme`）
+- 所有 HTML/CSS 元素透過 CSS custom properties（`--bg`、`--surface` 等）自動切換
+- SVG 元素使用 `svgTheme(light, dark)` helper 在 render 時選擇對應色值
+- 任務自訂色使用 `effectiveColor(hex)`：dark mode 下若亮度低於 35% 自動調亮，避免深色任務消失在深色背景
 
 ### HTML 預覽匯出
 
