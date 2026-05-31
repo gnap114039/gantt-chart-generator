@@ -89,9 +89,12 @@ gantt_chart_generator/
 
 - 時間軸表頭：月份列（上）+ 日期列（下），週末顯示淡灰背景
 - 今日線：橘色虛線，自動定位
-- 每列高度：52px，包含兩條橫條：
-  - **計劃條**（上，高 18px）：外框樣式，顯示任務名稱
-  - **實際條**（下，高 10px）：實色，含進度填充與百分比文字
+- 列高依層級不同：
+  - 頂層任務列：52px
+  - 子任務列：38px（最後一個子任務為 45px，確保與下一父任務間距一致）
+  - 計劃條和實際條位置依列高動態垂直置中
+  - **計劃條**（高 18px）：外框樣式，顯示任務名稱
+  - **實際條**（高 10px）：實色，含進度填充與百分比文字
 - 里程碑：菱形（旋轉 45° 的正方形），顯示於計劃日期
 - 依賴關係：貝茲曲線箭頭，連接前置任務結尾與後置任務起點
 
@@ -120,6 +123,15 @@ gantt_chart_generator/
 
 - 父任務橫條右側顯示子任務數量與展開方向（`▸` 收合 / `▾` 展開）
 - 展開後（層級模式）在 SVG 繪製 L 形層級連線（顏色同任務，透明度 0.35）
+
+### 完成狀態視覺標示（progress = 100）
+
+- 計劃條右上角顯示圓形 ✓ badge（顏色同任務色，白色打勾）
+- 左側任務清單名稱顯示刪除線（`text-decoration: line-through`）
+
+### 鍵盤操作
+
+- `Esc`：關閉任務編輯 modal（等同點擊取消或背景遮罩）
 
 ### 圖片匯出
 
@@ -181,14 +193,19 @@ id,name,start,end,color,milestone,actualStart,actualEnd,progress,dependencies,pa
 
 | 常數 | 值 | 說明 |
 |------|----|------|
-| `ROW_HEIGHT` | 52 | 每列高度（px） |
+| `ROW_HEIGHT` | 52 | 頂層任務列高（px） |
+| `SUB_ROW_HEIGHT` | 38 | 子任務列高（px） |
+| `LAST_CHILD_ROW_HEIGHT` | 45 | 最後子任務列高（px），確保與下一父任務間距一致 |
 | `PLAN_BAR_H` | 18 | 計劃條高度（px） |
 | `ACTUAL_BAR_H` | 10 | 實際條高度（px） |
-| `PLAN_BAR_Y` | 4 | 計劃條距列頂距離（px） |
-| `ACTUAL_BAR_Y` | 23 | 實際條距列頂距離（px） |
+| `BARS_GAP` | 1 | 計劃條與實際條間距（px） |
+| `BARS_TOTAL_H` | 29 | 兩條合計高度（PLAN_BAR_H + BARS_GAP + ACTUAL_BAR_H） |
+| `SUB_BAR_OFFSET` | 5 | 子任務橫條距列頂距離（px），= `(SUB_ROW_HEIGHT - BARS_TOTAL_H) / 2` |
 | `MILESTONE_SIZE` | 14 | 里程碑菱形半徑（px） |
 | `MIN_DAY_WIDTH` | 16 | 每天最小寬度（px） |
 | `MAX_DAY_WIDTH` | 64 | 每天最大寬度（px） |
+
+> `planY`（計劃條起始 Y）依列高動態計算：子任務列固定用 `SUB_BAR_OFFSET`；頂層任務列置中計算 `(ROW_HEIGHT - BARS_TOTAL_H) / 2`。`actualY = planY + PLAN_BAR_H + BARS_GAP`。
 
 ---
 

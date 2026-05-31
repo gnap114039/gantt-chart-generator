@@ -35,11 +35,19 @@
 修改 `js/renderer.js` 頂部常數：
 
 ```js
-const PLAN_BAR_H = 18;   // 計劃條高度
-const ACTUAL_BAR_H = 10; // 實際條高度
-const PLAN_BAR_Y = 4;    // 計劃條起始 Y
-const ACTUAL_BAR_Y = 23; // 實際條起始 Y（= PLAN_BAR_Y + PLAN_BAR_H + gap）
+const PLAN_BAR_H = 18;      // 計劃條高度
+const ACTUAL_BAR_H = 10;    // 實際條高度
+const BARS_GAP = 1;         // 兩條間距
+const ROW_HEIGHT = 52;      // 頂層任務列高
+const SUB_ROW_HEIGHT = 38;  // 子任務列高
 ```
+
+**注意**：`planY`（計劃條起始 Y）和 `actualY`（實際條起始 Y）不再是固定常數，而是在 `renderBarsGroup()` 中依列高動態計算：
+- 頂層任務：`planY = rowTop + Math.round((ROW_HEIGHT - BARS_TOTAL_H) / 2)`（置中）
+- 子任務：`planY = rowTop + SUB_BAR_OFFSET`（固定偏移，保持各子列間距一致）
+- `actualY = planY + PLAN_BAR_H + BARS_GAP`
+
+列高由 `getRowHeight(index, flatItems)` 依上下文決定（展開父列、子列、最後子列各不同）。
 
 ### 新增任務欄位
 

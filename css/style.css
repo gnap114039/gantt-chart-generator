@@ -19,7 +19,13 @@ body {
   background: #fff; border-bottom: 1px solid #e4e7ec;
   flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
-.toolbar-title { font-size: 16px; font-weight: 600; color: #101828; flex: 1; }
+.toolbar-title { font-size: 16px; font-weight: 600; color: #101828; }
+.github-link {
+  display: flex; align-items: center; color: #667085;
+  text-decoration: none; padding: 4px; border-radius: 6px;
+  transition: color 0.15s, background 0.15s; flex: 1;
+}
+.github-link:hover { color: #101828; background: #f2f4f7; }
 .toolbar-actions { display: flex; gap: 8px; align-items: center; }
 
 .btn {

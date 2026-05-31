@@ -1,9 +1,13 @@
 // ── Constants ──────────────────────────────────────────────────────────────────
 const ROW_HEIGHT = 52;
+const SUB_ROW_HEIGHT = 38;
 const PLAN_BAR_H = 18;
 const ACTUAL_BAR_H = 10;
-const PLAN_BAR_Y = 4;
-const ACTUAL_BAR_Y = 23;
+const BARS_GAP = 1;
+const BARS_TOTAL_H = PLAN_BAR_H + BARS_GAP + ACTUAL_BAR_H;                         // 29
+const SUB_BAR_OFFSET = Math.round((SUB_ROW_HEIGHT - BARS_TOTAL_H) / 2);             // 5  — top margin in sub-task rows
+const PARENT_BOTTOM  = ROW_HEIGHT - Math.round((ROW_HEIGHT - BARS_TOTAL_H) / 2) - BARS_TOTAL_H; // 11 — bottom margin in parent rows
+const LAST_CHILD_ROW_HEIGHT = SUB_BAR_OFFSET + BARS_TOTAL_H + PARENT_BOTTOM;        // 45 — last child gets equal gap to next parent
 const MILESTONE_SIZE = 14;
 const MIN_DAY_WIDTH = 16;
 const MAX_DAY_WIDTH = 64;
@@ -50,6 +54,25 @@ function svgEl(tag, attrs = {}, text = null) {
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   if (text !== null) el.textContent = text;
   return el;
+}
+
+function getRowHeight(index, flatItems) {
+  const item = flatItems[index];
+  const next = flatItems[index + 1];
+  if (item.level === 0) {
+    return ROW_HEIGHT;
+  } else {
+    // Last child in group: full height so last child→next parent gap is normal
+    return (!next || next.level === 0) ? LAST_CHILD_ROW_HEIGHT : SUB_ROW_HEIGHT;
+  }
+}
+function getRowY(index, flatItems) {
+  let y = 0;
+  for (let i = 0; i < index; i++) y += getRowHeight(i, flatItems);
+  return y;
+}
+function getTotalSvgHeight(flatItems) {
+  return flatItems.reduce((sum, _, i) => sum + getRowHeight(i, flatItems), 0);
 }
 
 // ── Time range ─────────────────────────────────────────────────────────────────
@@ -158,7 +181,7 @@ function renderTaskListTo(listId, flatItems, opts = {}) {
   if (!list) return;
   list.innerHTML = '';
 
-  flatItems.forEach(({ task, level, hasChildren: hc }) => {
+  flatItems.forEach(({ task, level, hasChildren: hc }, i) => {
     const row = document.createElement('div');
     const isSelected = viewMode === 'subpanel' && task.id === selectedParentId;
     row.className = [
@@ -168,7 +191,7 @@ function renderTaskListTo(listId, flatItems, opts = {}) {
       isSelected ? 'task-row-selected' : '',
     ].filter(Boolean).join(' ');
     row.dataset.id = task.id;
-    row.style.height = ROW_HEIGHT + 'px';
+    row.style.height = getRowHeight(i, flatItems) + 'px';
     row.style.paddingLeft = (8 + level * 18) + 'px';
 
     // Expand / select toggle
@@ -193,6 +216,7 @@ function renderTaskListTo(listId, flatItems, opts = {}) {
     const name = document.createElement('span');
     name.className = 'task-name';
     name.textContent = task.name;
+    if (task.progress >= 100) name.style.textDecoration = 'line-through';
     row.appendChild(name);
 
     row.addEventListener('click', () => {
@@ -207,12 +231,13 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
   const barGroup = svgEl('g', { class: 'bars' });
 
   flatItems.forEach(({ task }, i) => {
-    const rowTop = i * ROW_HEIGHT;
+    const rh = getRowHeight(i, flatItems);
+    const rowTop = getRowY(i, flatItems);
     const startX = xCtx(strToDate(task.start), ctx);
     const endX = xCtx(strToDate(task.end), ctx);
 
     if (task.isMilestone) {
-      const cx = startX, cy = rowTop + ROW_HEIGHT / 2;
+      const cx = startX, cy = rowTop + rh / 2;
       const diamond = svgEl('polygon', {
         points: `${cx},${cy - MILESTONE_SIZE} ${cx + MILESTONE_SIZE},${cy} ${cx},${cy + MILESTONE_SIZE} ${cx - MILESTONE_SIZE},${cy}`,
         fill: task.color, stroke: 'none', class: 'task-bar milestone', 'data-id': task.id,
@@ -226,7 +251,7 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
       const planWidth = Math.max(endX - startX, ctx.dayWidth);
       const g = svgEl('g', { class: 'task-group', 'data-id': task.id });
       const rgb = hexToRgb(task.color);
-      const planY = rowTop + PLAN_BAR_Y;
+      const planY = rowTop + (flatItems[i].level > 0 ? SUB_BAR_OFFSET : Math.round((rh - BARS_TOTAL_H) / 2));
 
       // Plan bar
       g.appendChild(svgEl('rect', {
@@ -241,6 +266,21 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
       const planLabel = svgEl('text', { x: startX + 8, y: planY + PLAN_BAR_H / 2 + 4, 'font-size': 11, fill: task.color, 'font-family': 'system-ui,sans-serif', 'font-weight': '500' }, task.name);
       planLabel.style.pointerEvents = 'none';
       g.appendChild(planLabel);
+
+      if (task.progress >= 100) {
+        const bx = startX + planWidth - 8, by = planY;
+        const badge = svgEl('circle', { cx: bx, cy: by, r: 7, fill: task.color });
+        badge.style.pointerEvents = 'none';
+        g.appendChild(badge);
+        const check = svgEl('text', {
+          x: bx, y: by,
+          'text-anchor': 'middle', 'dominant-baseline': 'central',
+          'font-size': 9, fill: '#fff',
+          'font-family': 'system-ui,sans-serif', 'font-weight': '900',
+        }, '✓');
+        check.style.pointerEvents = 'none';
+        g.appendChild(check);
+      }
 
       if (hasChildren(task.id)) {
         const childCount = getChildTasks(task.id).length;
@@ -269,7 +309,7 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
       }
 
       // Actual bar
-      const actualY = rowTop + ACTUAL_BAR_Y;
+      const actualY = planY + PLAN_BAR_H + BARS_GAP;
       const hasActual = !!task.actualStart;
       const actualStartX = hasActual ? xCtx(strToDate(task.actualStart), ctx) : startX;
       const actualEndX = hasActual && task.actualEnd ? xCtx(strToDate(task.actualEnd), ctx) : endX;
@@ -289,7 +329,9 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
         const clip = svgEl('clipPath', { id: clipId });
         clip.appendChild(svgEl('rect', { x: actualStartX, y: actualY, width: actualWidth, height: ACTUAL_BAR_H, rx: 3, ry: 3 }));
         g.appendChild(clip);
-        g.appendChild(svgEl('rect', { x: actualStartX, y: actualY, width: progressWidth, height: ACTUAL_BAR_H, rx: 3, ry: 3, fill: task.color, opacity: 0.85, 'clip-path': `url(#${clipId})` }));
+        const progressFill = svgEl('rect', { x: actualStartX, y: actualY, width: progressWidth, height: ACTUAL_BAR_H, rx: 3, ry: 3, fill: task.color, opacity: 0.85, 'clip-path': `url(#${clipId})` });
+        progressFill.style.pointerEvents = 'none';
+        g.appendChild(progressFill);
         if (actualWidth > 36) {
           const pct = svgEl('text', {
             x: actualStartX + Math.min(progressWidth + 4, actualWidth - 4), y: actualY + ACTUAL_BAR_H / 2 + 4,
@@ -354,9 +396,9 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
       if (depIdx === -1) return;
       const depEndX = xCtx(strToDate(dep.isMilestone ? dep.start : dep.end), ctx);
       const depAX = dep.isMilestone ? depEndX + MILESTONE_SIZE : depEndX;
-      const depY = depIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
+      const depY = getRowY(depIdx, flatItems) + getRowHeight(depIdx, flatItems) / 2;
       const taskStartX = xCtx(strToDate(task.start), ctx);
-      const taskY = i * ROW_HEIGHT + ROW_HEIGHT / 2;
+      const taskY = getRowY(i, flatItems) + getRowHeight(i, flatItems) / 2;
       depGroup.appendChild(svgEl('path', {
         d: `M ${depAX} ${depY} C ${depAX + 20} ${depY} ${taskStartX - 20} ${taskY} ${taskStartX} ${taskY}`,
         stroke: '#94a3b8', 'stroke-width': 1.5, fill: 'none', 'marker-end': `url(#arrow-${svgId})`,
@@ -379,8 +421,11 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
       if (!children.length) return;
 
       const connX = xCtx(strToDate(task.start), ctx) + 6;
-      const topY = i * ROW_HEIGHT + PLAN_BAR_Y + PLAN_BAR_H + 1;
-      const botY = children[children.length - 1] * ROW_HEIGHT + ROW_HEIGHT / 2;
+      const parentRh = getRowHeight(i, flatItems);
+      const parentPlanY = Math.round((parentRh - BARS_TOTAL_H) / 2);
+      const topY = getRowY(i, flatItems) + parentPlanY + PLAN_BAR_H + 1;
+      const lastChildIdx = children[children.length - 1];
+      const botY = getRowY(lastChildIdx, flatItems) + getRowHeight(lastChildIdx, flatItems) / 2;
 
       // Vertical line
       connGroup.appendChild(svgEl('line', {
@@ -390,7 +435,7 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
 
       children.forEach((ci, idx) => {
         const childTask = flatItems[ci].task;
-        const childMidY = ci * ROW_HEIGHT + ROW_HEIGHT / 2;
+        const childMidY = getRowY(ci, flatItems) + getRowHeight(ci, flatItems) / 2;
         const childStartX = xCtx(strToDate(childTask.start), ctx);
         const isLast = idx === children.length - 1;
 
@@ -493,7 +538,7 @@ function render() {
   viewState.startDate = start;
   viewState.totalDays = totalDays;
   viewState.svgWidth = totalDays * DAY_WIDTH;
-  viewState.svgHeight = Math.max(visibleTasks.length * ROW_HEIGHT, 200);
+  viewState.svgHeight = Math.max(getTotalSvgHeight(flatItems), 200);
 
   const mainCtx = { startDate: start, totalDays, dayWidth: DAY_WIDTH, svgWidth: viewState.svgWidth, svgHeight: viewState.svgHeight };
 

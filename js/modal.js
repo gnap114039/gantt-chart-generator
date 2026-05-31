@@ -17,6 +17,7 @@ function openModal(taskId = null, parentId = null) {
     if (!task) return;
     title.textContent = t('modalEditTask');
     document.getElementById('task-id').value = task.id;
+    document.getElementById('task-parent-id').value = task.parentId || '';
     document.getElementById('task-name').value = task.name;
     document.getElementById('task-start').value = task.start;
     document.getElementById('task-end').value = task.end;
@@ -124,6 +125,10 @@ function initModal() {
 
   overlay.addEventListener('click', e => {
     if (e.target === overlay) closeModal();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.style.display !== 'none') closeModal();
   });
 
   document.getElementById('btn-cancel').addEventListener('click', closeModal);
