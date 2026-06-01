@@ -193,6 +193,15 @@ body {
 .task-row.sub-task-row { background: var(--surface-subtask); font-size: 12px; color: var(--text-faint); }
 .task-row.sub-task-row:hover { background: var(--surface-subtask-hover); }
 .task-row.task-row-selected { background: var(--surface-selected) !important; }
+.task-row.dragging { opacity: 0.4; }
+.task-row.drag-over-top { border-top: 2px solid #4A90D9; }
+.task-row.drag-over-bottom { border-bottom: 2px solid #4A90D9; }
+.drag-sort-handle { cursor: grab; color: var(--text-faint); font-size: 13px; padding: 0 2px; flex-shrink: 0; opacity: 0; transition: opacity 0.1s; }
+.task-row:hover .drag-sort-handle, .subtask-item:hover .drag-sort-handle { opacity: 1; }
+.drag-sort-handle:active { cursor: grabbing; }
+.subtask-item.dragging { opacity: 0.4; }
+.subtask-item.drag-over-top { border-top: 2px solid #4A90D9; }
+.subtask-item.drag-over-bottom { border-bottom: 2px solid #4A90D9; }
 
 .task-expand-toggle {
   width: 18px; flex-shrink: 0; font-size: 14px; color: var(--text-muted);

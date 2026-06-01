@@ -83,6 +83,16 @@ function deleteTask(id) {
   saveTasks();
 }
 
+function reorderTask(taskId, targetTaskId, insertAfter) {
+  const fromIdx = tasks.findIndex(t => t.id === taskId);
+  if (fromIdx === -1) return;
+  const task = tasks.splice(fromIdx, 1)[0];
+  let toIdx = tasks.findIndex(t => t.id === targetTaskId);
+  if (toIdx === -1) tasks.push(task);
+  else tasks.splice(insertAfter ? toIdx + 1 : toIdx, 0, task);
+  saveTasks();
+}
+
 function clearTasks() {
   tasks = [];
   nextId = 1;

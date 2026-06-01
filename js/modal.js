@@ -75,9 +75,17 @@ function renderSubTaskSection(parentId) {
     return;
   }
 
+  let dragModalSortId = null;
+
   children.forEach(child => {
     const item = document.createElement('div');
     item.className = 'subtask-item';
+
+    const handle = document.createElement('span');
+    handle.className = 'drag-sort-handle';
+    handle.textContent = '⠿';
+    handle.addEventListener('mousedown', () => { item.draggable = true; });
+    item.appendChild(handle);
 
     const dot = document.createElement('span');
     dot.className = 'subtask-dot';
@@ -99,6 +107,40 @@ function renderSubTaskSection(parentId) {
     item.appendChild(dot);
     item.appendChild(name);
     item.appendChild(editBtn);
+
+    item.addEventListener('dragstart', e => {
+      dragModalSortId = child.id;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => {
+      item.draggable = false;
+      item.classList.remove('dragging');
+      dragModalSortId = null;
+      list.querySelectorAll('.subtask-item').forEach(el => el.classList.remove('drag-over-top', 'drag-over-bottom'));
+    });
+    item.addEventListener('dragover', e => {
+      if (dragModalSortId === null || dragModalSortId === child.id) return;
+      e.preventDefault();
+      const rect = item.getBoundingClientRect();
+      const isTop = e.clientY < rect.top + rect.height / 2;
+      list.querySelectorAll('.subtask-item').forEach(el => el.classList.remove('drag-over-top', 'drag-over-bottom'));
+      item.classList.add(isTop ? 'drag-over-top' : 'drag-over-bottom');
+    });
+    item.addEventListener('dragleave', e => {
+      if (!item.contains(e.relatedTarget)) item.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragModalSortId === null || dragModalSortId === child.id) return;
+      const rect = item.getBoundingClientRect();
+      const insertAfter = e.clientY >= rect.top + rect.height / 2;
+      item.classList.remove('drag-over-top', 'drag-over-bottom');
+      reorderTask(dragModalSortId, child.id, insertAfter);
+      renderSubTaskSection(parentId);
+      render();
+    });
+
     list.appendChild(item);
   });
 }

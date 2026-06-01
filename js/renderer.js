@@ -16,6 +16,7 @@ const MIN_DAYS = 14;
 // ── Main panel state (kept global for drag.js) ─────────────────────────────────
 let DAY_WIDTH = 32;
 let viewState = { startDate: null, totalDays: 0, svgWidth: 0, svgHeight: 0 };
+let dragSortId = null;
 
 // ── Hierarchy / sub-panel mode ─────────────────────────────────────────────────
 let expandedSet = new Set();
@@ -213,6 +214,48 @@ function renderTaskListTo(listId, flatItems, opts = {}) {
     row.style.paddingLeft = (8 + level * 18) + 'px';
 
     // Expand / select toggle
+    // Drag-sort handle
+    const handle = document.createElement('span');
+    handle.className = 'drag-sort-handle';
+    handle.textContent = '⠿';
+    handle.addEventListener('mousedown', () => { row.draggable = true; });
+    row.appendChild(handle);
+
+    row.addEventListener('dragstart', e => {
+      dragSortId = task.id;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => row.classList.add('dragging'), 0);
+    });
+    row.addEventListener('dragend', () => {
+      row.draggable = false;
+      row.classList.remove('dragging');
+      dragSortId = null;
+      document.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
+    });
+    row.addEventListener('dragover', e => {
+      if (dragSortId === null) return;
+      const src = getTask(dragSortId);
+      if (!src || src.id === task.id) return;
+      if ((src.parentId || null) !== (task.parentId || null)) return;
+      e.preventDefault();
+      const isTop = e.clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
+      document.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
+      row.classList.add(isTop ? 'drag-over-top' : 'drag-over-bottom');
+    });
+    row.addEventListener('dragleave', e => {
+      if (!row.contains(e.relatedTarget)) row.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      const src = getTask(dragSortId);
+      if (!src || src.id === task.id) return;
+      if ((src.parentId || null) !== (task.parentId || null)) return;
+      const insertAfter = e.clientY >= row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
+      row.classList.remove('drag-over-top', 'drag-over-bottom');
+      reorderTask(dragSortId, task.id, insertAfter);
+      render();
+    });
+
     const toggle = document.createElement('span');
     toggle.className = 'task-expand-toggle';
     if (hc) {
