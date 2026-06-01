@@ -180,8 +180,8 @@ function renderTimelineHeaderTo(containerId, ctx) {
       monthStartX = x;
     }
     const isWE = d.getDay() === 0 || d.getDay() === 6;
-    dayRow.appendChild(svgEl('rect', { x, y: 22, width: ctx.dayWidth, height: 26, fill: isWE ? svgTheme('#f9fafb', '#161924') : 'none', stroke: svgTheme('#e4e7ec', '#30363d'), 'stroke-width': 0.5 }));
-    dayRow.appendChild(svgEl('text', { x: x + ctx.dayWidth / 2, y: 37, 'text-anchor': 'middle', 'font-size': 10, fill: isWE ? svgTheme('#9aa5b4', '#6e7681') : svgTheme('#344054', '#c9d1d9'), 'font-family': 'system-ui,sans-serif' }, d.getDate()));
+    dayRow.appendChild(svgEl('rect', { x, y: 22, width: ctx.dayWidth, height: 26, fill: isWE ? svgTheme('#e5edff', '#1a2744') : 'none', stroke: svgTheme('#e4e7ec', '#30363d'), 'stroke-width': 0.5 }));
+    dayRow.appendChild(svgEl('text', { x: x + ctx.dayWidth / 2, y: 37, 'text-anchor': 'middle', 'font-size': 10, fill: isWE ? svgTheme('#6b8cff', '#7b8ec8') : svgTheme('#344054', '#c9d1d9'), 'font-family': 'system-ui,sans-serif' }, d.getDate()));
   }
 
   if (curMonth !== null) {
@@ -394,7 +394,7 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
     const d = addDays(ctx.startDate, i);
     const x = i * ctx.dayWidth;
     const isWE = d.getDay() === 0 || d.getDay() === 6;
-    if (isWE) grid.appendChild(svgEl('rect', { x, y: 0, width: ctx.dayWidth, height: ctx.svgHeight, fill: svgTheme('#f9fafb', '#161924'), opacity: 0.6 }));
+    if (isWE) grid.appendChild(svgEl('rect', { x, y: 0, width: ctx.dayWidth, height: ctx.svgHeight, fill: svgTheme('#e5edff', '#1a2744'), opacity: 0.85 }));
     grid.appendChild(svgEl('line', { x1: x, y1: 0, x2: x, y2: ctx.svgHeight, stroke: svgTheme('#e4e7ec', '#21262d'), 'stroke-width': 0.5 }));
   }
   svg.appendChild(grid);
