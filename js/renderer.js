@@ -253,7 +253,7 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
     const rh = getRowHeight(i, flatItems);
     const rowTop = getRowY(i, flatItems);
     const startX = xCtx(strToDate(task.start), ctx);
-    const endX = xCtx(strToDate(task.end), ctx);
+    const endX = xCtx(addDays(strToDate(task.end), 1), ctx);
 
     if (task.isMilestone) {
       const cx = startX, cy = rowTop + rh / 2;
@@ -333,7 +333,7 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
       const actualY = planY + PLAN_BAR_H + BARS_GAP;
       const hasActual = !!task.actualStart;
       const actualStartX = hasActual ? xCtx(strToDate(task.actualStart), ctx) : startX;
-      const actualEndX = hasActual && task.actualEnd ? xCtx(strToDate(task.actualEnd), ctx) : endX;
+      const actualEndX = hasActual && task.actualEnd ? xCtx(addDays(strToDate(task.actualEnd), 1), ctx) : endX;
       const actualWidth = Math.max(actualEndX - actualStartX, ctx.dayWidth);
       const progress = Math.max(0, Math.min(100, task.progress || 0));
 
@@ -415,7 +415,7 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
       if (!dep) return;
       const depIdx = flatItems.findIndex(fi => fi.task.id === depId);
       if (depIdx === -1) return;
-      const depEndX = xCtx(strToDate(dep.isMilestone ? dep.start : dep.end), ctx);
+      const depEndX = dep.isMilestone ? xCtx(strToDate(dep.start), ctx) : xCtx(addDays(strToDate(dep.end), 1), ctx);
       const depAX = dep.isMilestone ? depEndX + MILESTONE_SIZE : depEndX;
       const depY = getRowY(depIdx, flatItems) + getRowHeight(depIdx, flatItems) / 2;
       const taskStartX = xCtx(strToDate(task.start), ctx);
