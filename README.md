@@ -4,6 +4,8 @@ A zero-dependency, pure frontend Gantt chart tool. Open `index.html` directly in
 
 純前端甘特圖工具，無需安裝或建置。直接用瀏覽器開啟 `index.html` 即可使用。
 
+**🔗 Live Demo**: [https://gnap114039.github.io/gantt-chart-generator/](https://gnap114039.github.io/gantt-chart-generator/)
+
 ---
 
 ## Screenshots / 畫面預覽
@@ -215,7 +217,7 @@ A GitHub Actions workflow is included. After pushing to `main`:
 2. Set Source to **GitHub Actions**.
 3. Every push to `main` triggers an automatic deploy.
 
-Live URL: `https://<your-username>.github.io/<repo-name>/`
+Live URL: [https://gnap114039.github.io/gantt-chart-generator/](https://gnap114039.github.io/gantt-chart-generator/)
 
 ---
 
