@@ -230,7 +230,7 @@ id,name,start,end,color,milestone,actualStart,actualEnd,progress,dependencies,pa
 ### HTML 預覽匯出
 
 - 功能：將當前甘特圖匯出為單一自含 `.html` 檔案
-- 做法：`fetch()` 讀取 `css/style.css`、`js/data.js`、`js/renderer.js`，連同任務資料內嵌至 HTML
+- 做法：`fetch()` 讀取 `css/style.css`、`js/data.js`、`js/i18n.js`、`js/renderer.js`，連同任務資料內嵌至 HTML
 - 匯出檔功能：展開/收合子任務、切換 hierarchy/subpanel 視圖模式
 - 不含功能：拖曳編輯、任務新增/刪除、CSV 存取、圖片匯出
 - 限制：需 HTTP 環境（VS Code Live Preview 或 GitHub Pages），`file://` 協議下 `fetch()` 受安全限制無法運作

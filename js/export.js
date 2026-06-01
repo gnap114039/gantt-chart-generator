@@ -45,7 +45,7 @@ function copyImage() {
   getExportCanvas(canvas => {
     canvas.toBlob(blob => {
       if (!blob) {
-        alert('無法產生圖片，請重試。');
+        alert(t('errorExportFail'));
         return;
       }
       const item = new ClipboardItem({ 'image/png': blob });
@@ -60,9 +60,10 @@ function copyImage() {
 
 async function exportHtmlPreview() {
   try {
-    const [css, dataJs, rendererJs] = await Promise.all([
+    const [css, dataJs, i18nJs, rendererJs] = await Promise.all([
       fetch('css/style.css').then(r => r.text()),
       fetch('js/data.js').then(r => r.text()),
+      fetch('js/i18n.js').then(r => r.text()),
       fetch('js/renderer.js').then(r => r.text()),
     ]);
 
@@ -166,6 +167,7 @@ window.openAddSubTaskModal = function() {};
   </div>
   <div id="toast"></div>
   <script>${dataJs}<\/script>
+  <script>${i18nJs}<\/script>
   <script>${rendererJs}<\/script>
   <script>${initScript}<\/script>
 </body>

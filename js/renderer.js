@@ -356,7 +356,7 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
         if (actualWidth > 36) {
           const pct = svgEl('text', {
             x: actualStartX + Math.min(progressWidth + 4, actualWidth - 4), y: actualY + ACTUAL_BAR_H / 2 + 4,
-            'font-size': 9, fill: progress > 50 ? '#fff' : '#344054', 'font-family': 'system-ui,sans-serif', 'font-weight': '600',
+            'font-size': 9, fill: progress > 60 ? '#fff' : '#344054', 'font-family': 'system-ui,sans-serif', 'font-weight': '600',
             'text-anchor': progress > 60 ? 'end' : 'start',
           }, `${progress}%`);
           pct.style.pointerEvents = 'none';
