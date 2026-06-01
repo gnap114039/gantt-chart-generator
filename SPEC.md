@@ -101,9 +101,20 @@ gantt_chart_generator/
 
 ### 時間縮放
 
-- `DAY_WIDTH` 根據右側面板寬度自動計算（`availableWidth / totalDays`）
-- 限制範圍：16px–64px per day
-- 視窗或面板大小改變時（ResizeObserver，80ms debounce）自動重算
+- **自動模式**：`DAY_WIDTH` 根據右側面板寬度自動計算（`availableWidth / totalDays`），限制範圍 16–64px/day；視窗改變時（ResizeObserver，80ms debounce）自動重算
+- **手動縮放**：工具列的 `+` / `−` 按鈕調整 `manualDayWidth`（每次 ×1.5 或 ÷1.5），範圍 1–128px/day；`fit` 按鈕回到自動模式
+- **縮放層級自動切換表頭格式**：
+  - `DAY_WIDTH ≥ 12px`（日模式）：表頭下排顯示日期，週末背景淡藍
+  - `6 ≤ DAY_WIDTH < 12px`（週模式）：表頭下排顯示每週起始日（M/D），格線以週為單位
+  - `DAY_WIDTH < 6px`（月模式）：表頭上排顯示年份、下排顯示月份縮寫，格線以月為單位
+- `getZoomMode(dw)` 依 dayWidth 回傳 `'day'` / `'week'` / `'month'`
+
+### 日期篩選
+
+- 工具列「篩選日期」按鈕展開篩選列（filter-bar）
+- 篩選列提供開始／結束日期輸入，兩者皆設定時覆蓋 `computeTimeRange` 的自動計算結果
+- 「清除」按鈕清除篩選並還原自動範圍
+- 子面板（`renderSubPanel`）永遠使用 `computeTimeRange(children, ignoreFilter=true)`，不受篩選影響
 
 ### 拖曳互動
 
@@ -182,9 +193,10 @@ id,name,start,end,color,milestone,actualStart,actualEnd,progress,dependencies,pa
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Toolbar: 專案名稱(可編輯) | + 新增任務 | ☰ 層級 ⊞ 分頁 |                     │
+│ Toolbar: 專案名稱(可編輯) | + 新增任務 | ☰ 層級 ⊞ 分頁 | − fit + | 篩選日期 │
 │          開啟CSV 儲存 匯出 | 📄 filename.csv | 匯出圖片 複製圖片              │
 │          匯出HTML | 中 EN | 🌙 | ？                                           │
+│ Filter bar (可收合): 顯示範圍 [起始日] – [結束日] [清除]                     │
 ├──────────────┬───────────────────────────────────────────────────────────────┤
 │ 任務清單（左）│ 時間軸表頭（sticky）                                          │
 │ 200px 固定   │────────────────────────────────────────────────────────────── │

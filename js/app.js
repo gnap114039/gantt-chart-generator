@@ -69,6 +69,43 @@ function initApp() {
   document.getElementById('btn-mode-hierarchy').addEventListener('click', () => { setViewMode('hierarchy'); render(); });
   document.getElementById('btn-mode-subpanel').addEventListener('click', () => { setViewMode('subpanel'); render(); });
 
+  // Zoom controls
+  document.getElementById('btn-zoom-in').addEventListener('click', () => {
+    manualDayWidth = Math.min(128, Math.round((manualDayWidth !== null ? manualDayWidth : DAY_WIDTH) * 1.5));
+    render();
+  });
+  document.getElementById('btn-zoom-out').addEventListener('click', () => {
+    manualDayWidth = Math.max(1, Math.round((manualDayWidth !== null ? manualDayWidth : DAY_WIDTH) / 1.5));
+    render();
+  });
+  document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+    manualDayWidth = null;
+    render();
+  });
+
+  // Date filter
+  document.getElementById('btn-toggle-filter').addEventListener('click', () => {
+    const bar = document.getElementById('filter-bar');
+    const showing = bar.style.display !== 'none';
+    bar.style.display = showing ? 'none' : 'flex';
+    document.getElementById('btn-toggle-filter').classList.toggle('active', !showing);
+  });
+  document.getElementById('filter-start').addEventListener('change', e => {
+    dateFilterStart = e.target.value || null;
+    render();
+  });
+  document.getElementById('filter-end').addEventListener('change', e => {
+    dateFilterEnd = e.target.value || null;
+    render();
+  });
+  document.getElementById('btn-filter-reset').addEventListener('click', () => {
+    dateFilterStart = null;
+    dateFilterEnd = null;
+    document.getElementById('filter-start').value = '';
+    document.getElementById('filter-end').value = '';
+    render();
+  });
+
   // Sub-panel
   document.getElementById('btn-close-subpanel').addEventListener('click', () => { selectedParentId = null; render(); });
   document.getElementById('btn-add-subtask-main').addEventListener('click', () => {

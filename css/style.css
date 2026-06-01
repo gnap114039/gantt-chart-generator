@@ -138,6 +138,23 @@ body {
 .btn-group .btn:first-child { border-radius: 6px 0 0 6px; }
 .btn-group .btn:last-child { border-radius: 0 6px 6px 0; border-right-width: 1px; }
 
+/* ── Filter bar ── */
+.filter-bar {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 5px 20px;
+  background: var(--surface-subtle); border-bottom: 1px solid var(--border);
+}
+.filter-label { font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
+.filter-sep { font-size: 12px; color: var(--text-muted); }
+.filter-input {
+  padding: 3px 8px; border: 1px solid var(--input-border);
+  border-radius: 6px; font-size: 12px; color: var(--text-secondary);
+  background: var(--input-bg); outline: none;
+}
+.filter-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+#btn-toggle-filter.active { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
+[data-theme="dark"] #btn-toggle-filter.active { background: #1f3561; color: #93c5fd; border-color: #1d4ed8; }
+
 /* ── Main area ── */
 .main-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 
@@ -166,16 +183,17 @@ body {
 }
 
 .gantt-left-header {
-  height: 48px; display: flex; align-items: center;
-  padding: 0 16px; border-bottom: 1px solid var(--border);
+  min-height: 48px; display: flex; align-items: center;
+  padding: 4px 16px; border-bottom: 1px solid var(--border);
   background: var(--surface-subtle); flex-shrink: 0;
 }
 
 #project-name {
+  display: block; width: 100%;
   font-size: 13px; font-weight: 600; color: var(--text-secondary);
   outline: none; border-radius: 4px; padding: 2px 4px;
-  cursor: text; min-width: 20px; max-width: 160px;
-  overflow: hidden; white-space: nowrap;
+  cursor: text; min-width: 20px;
+  white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word;
 }
 #project-name:hover { background: var(--project-name-hover); }
 #project-name:focus { background: var(--input-bg); box-shadow: 0 0 0 2px #2563eb; }

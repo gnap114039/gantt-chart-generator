@@ -18,6 +18,15 @@ let DAY_WIDTH = 32;
 let viewState = { startDate: null, totalDays: 0, svgWidth: 0, svgHeight: 0 };
 let dragSortId = null;
 
+// ── Zoom & filter state ────────────────────────────────────────────────────────
+let manualDayWidth = null;
+let dateFilterStart = null;
+let dateFilterEnd = null;
+
+function getZoomMode(dw) {
+  return dw < 6 ? 'month' : dw < 12 ? 'week' : 'day';
+}
+
 // ── Hierarchy / sub-panel mode ─────────────────────────────────────────────────
 let expandedSet = new Set();
 let viewMode = localStorage.getItem('gantt_view_mode') || 'hierarchy';
@@ -96,7 +105,12 @@ function getTotalSvgHeight(flatItems) {
 }
 
 // ── Time range ─────────────────────────────────────────────────────────────────
-function computeTimeRange(tasks) {
+function computeTimeRange(tasks, ignoreFilter) {
+  if (!ignoreFilter && dateFilterStart && dateFilterEnd && dateFilterStart <= dateFilterEnd) {
+    const start = strToDate(dateFilterStart);
+    const end = addDays(strToDate(dateFilterEnd), 1);
+    return { start, totalDays: Math.max(7, daysBetween(start, end)) };
+  }
   if (!tasks.length) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -162,6 +176,15 @@ function renderTimelineHeaderTo(containerId, ctx) {
   svg.setAttribute('height', 48);
   svg.style.display = 'block';
 
+  const mode = getZoomMode(ctx.dayWidth);
+  if (mode === 'week') _renderHeaderWeek(svg, ctx);
+  else if (mode === 'month') _renderHeaderMonth(svg, ctx);
+  else _renderHeaderDay(svg, ctx);
+
+  header.appendChild(svg);
+}
+
+function _renderHeaderDay(svg, ctx) {
   const monthRow = svgEl('g'), dayRow = svgEl('g');
   let curMonth = null, monthStartX = 0;
 
@@ -191,7 +214,94 @@ function renderTimelineHeaderTo(containerId, ctx) {
   }
   svg.appendChild(monthRow);
   svg.appendChild(dayRow);
-  header.appendChild(svg);
+}
+
+function _renderHeaderWeek(svg, ctx) {
+  const topRow = svgEl('g'), botRow = svgEl('g');
+
+  // Top row: year-months
+  let curMonth = null, monthStartX = 0;
+  for (let i = 0; i <= ctx.totalDays; i++) {
+    const d = addDays(ctx.startDate, i);
+    const x = i * ctx.dayWidth;
+    const month = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (month !== curMonth) {
+      if (curMonth !== null) {
+        const mw = x - monthStartX;
+        topRow.appendChild(svgEl('rect', { x: monthStartX, y: 0, width: mw, height: 22, fill: 'none', stroke: svgTheme('#d0d5dd', '#30363d'), 'stroke-width': 1 }));
+        if (mw > 16) topRow.appendChild(svgEl('text', { x: monthStartX + 6, y: 15, 'font-size': 11, fill: svgTheme('#667085', '#8b949e'), 'font-family': 'system-ui,sans-serif' }, curMonth));
+      }
+      curMonth = month;
+      monthStartX = x;
+    }
+  }
+
+  // Bottom row: week cells (Mon–Sun)
+  const startDow = ctx.startDate.getDay();
+  let weekStart = addDays(ctx.startDate, startDow === 0 ? -6 : 1 - startDow);
+  while (true) {
+    const wx = daysBetween(ctx.startDate, weekStart) * ctx.dayWidth;
+    if (wx >= ctx.svgWidth) break;
+    const wxEnd = Math.min(daysBetween(ctx.startDate, addDays(weekStart, 7)) * ctx.dayWidth, ctx.svgWidth);
+    const cellLeft = Math.max(wx, 0);
+    const cellW = wxEnd - cellLeft;
+    if (cellW > 0) {
+      botRow.appendChild(svgEl('rect', { x: cellLeft, y: 22, width: cellW, height: 26, fill: 'none', stroke: svgTheme('#e4e7ec', '#30363d'), 'stroke-width': 0.5 }));
+      if (cellW > 20) {
+        const lbl = (weekStart.getMonth() + 1) + '/' + weekStart.getDate();
+        botRow.appendChild(svgEl('text', { x: cellLeft + cellW / 2, y: 37, 'text-anchor': 'middle', 'font-size': 10, fill: svgTheme('#344054', '#c9d1d9'), 'font-family': 'system-ui,sans-serif' }, lbl));
+      }
+    }
+    weekStart = addDays(weekStart, 7);
+  }
+
+  svg.appendChild(topRow);
+  svg.appendChild(botRow);
+}
+
+function _renderHeaderMonth(svg, ctx) {
+  const topRow = svgEl('g'), botRow = svgEl('g');
+  const MNAMES = currentLang === 'zh'
+    ? ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Top row: years
+  let curYear = null, yearStartX = 0;
+  for (let i = 0; i <= ctx.totalDays; i++) {
+    const d = addDays(ctx.startDate, i);
+    const x = i * ctx.dayWidth;
+    const yr = String(d.getFullYear());
+    if (yr !== curYear) {
+      if (curYear !== null) {
+        const yw = x - yearStartX;
+        topRow.appendChild(svgEl('rect', { x: yearStartX, y: 0, width: yw, height: 22, fill: 'none', stroke: svgTheme('#d0d5dd', '#30363d'), 'stroke-width': 1 }));
+        if (yw > 16) topRow.appendChild(svgEl('text', { x: yearStartX + 6, y: 15, 'font-size': 11, fill: svgTheme('#667085', '#8b949e'), 'font-family': 'system-ui,sans-serif' }, curYear));
+      }
+      curYear = yr;
+      yearStartX = x;
+    }
+  }
+
+  // Bottom row: month cells
+  let mStart = new Date(ctx.startDate.getFullYear(), ctx.startDate.getMonth(), 1);
+  while (true) {
+    const mx = daysBetween(ctx.startDate, mStart) * ctx.dayWidth;
+    if (mx >= ctx.svgWidth) break;
+    const nextM = new Date(mStart.getFullYear(), mStart.getMonth() + 1, 1);
+    const cellLeft = Math.max(mx, 0);
+    const cellRight = Math.min(daysBetween(ctx.startDate, nextM) * ctx.dayWidth, ctx.svgWidth);
+    const cellW = cellRight - cellLeft;
+    if (cellW > 0) {
+      botRow.appendChild(svgEl('rect', { x: cellLeft, y: 22, width: cellW, height: 26, fill: 'none', stroke: svgTheme('#e4e7ec', '#30363d'), 'stroke-width': 0.5 }));
+      if (cellW > 12) {
+        botRow.appendChild(svgEl('text', { x: cellLeft + cellW / 2, y: 37, 'text-anchor': 'middle', 'font-size': 10, fill: svgTheme('#344054', '#c9d1d9'), 'font-family': 'system-ui,sans-serif' }, MNAMES[mStart.getMonth()]));
+      }
+    }
+    mStart = new Date(nextM);
+  }
+
+  svg.appendChild(topRow);
+  svg.appendChild(botRow);
 }
 
 // ── Generic: task list ─────────────────────────────────────────────────────────
@@ -432,12 +542,32 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
 
   // Grid
   const grid = svgEl('g', { class: 'grid' });
-  for (let i = 0; i < ctx.totalDays; i++) {
-    const d = addDays(ctx.startDate, i);
-    const x = i * ctx.dayWidth;
-    const isWE = d.getDay() === 0 || d.getDay() === 6;
-    if (isWE) grid.appendChild(svgEl('rect', { x, y: 0, width: ctx.dayWidth, height: ctx.svgHeight, fill: svgTheme('#e5edff', '#1a2744'), opacity: 0.85 }));
-    grid.appendChild(svgEl('line', { x1: x, y1: 0, x2: x, y2: ctx.svgHeight, stroke: svgTheme('#e4e7ec', '#21262d'), 'stroke-width': 0.5 }));
+  const _gm = getZoomMode(ctx.dayWidth);
+  if (_gm === 'day') {
+    for (let i = 0; i < ctx.totalDays; i++) {
+      const d = addDays(ctx.startDate, i);
+      const x = i * ctx.dayWidth;
+      const isWE = d.getDay() === 0 || d.getDay() === 6;
+      if (isWE) grid.appendChild(svgEl('rect', { x, y: 0, width: ctx.dayWidth, height: ctx.svgHeight, fill: svgTheme('#e5edff', '#1a2744'), opacity: 0.85 }));
+      grid.appendChild(svgEl('line', { x1: x, y1: 0, x2: x, y2: ctx.svgHeight, stroke: svgTheme('#e4e7ec', '#21262d'), 'stroke-width': 0.5 }));
+    }
+  } else if (_gm === 'week') {
+    const _dow = ctx.startDate.getDay();
+    let _wk = addDays(ctx.startDate, _dow === 0 ? -6 : 1 - _dow);
+    while (true) {
+      const _x = daysBetween(ctx.startDate, _wk) * ctx.dayWidth;
+      if (_x > ctx.svgWidth) break;
+      if (_x >= 0) grid.appendChild(svgEl('line', { x1: _x, y1: 0, x2: _x, y2: ctx.svgHeight, stroke: svgTheme('#e4e7ec', '#21262d'), 'stroke-width': 0.5 }));
+      _wk = addDays(_wk, 7);
+    }
+  } else {
+    let _ms = new Date(ctx.startDate.getFullYear(), ctx.startDate.getMonth(), 1);
+    while (true) {
+      const _x = daysBetween(ctx.startDate, _ms) * ctx.dayWidth;
+      if (_x > ctx.svgWidth) break;
+      if (_x >= 0) grid.appendChild(svgEl('line', { x1: _x, y1: 0, x2: _x, y2: ctx.svgHeight, stroke: svgTheme('#e4e7ec', '#21262d'), 'stroke-width': 0.5 }));
+      _ms = new Date(_ms.getFullYear(), _ms.getMonth() + 1, 1);
+    }
   }
   svg.appendChild(grid);
 
@@ -549,7 +679,7 @@ function renderSubPanel() {
   }
 
   const childFlatItems = children.map(c => ({ task: c, level: 0, hasChildren: false }));
-  const { start, totalDays } = computeTimeRange(children);
+  const { start, totalDays } = computeTimeRange(children, true);
 
   panel.style.display = 'flex';
   setSplitHeight(true);
@@ -599,7 +729,11 @@ function render() {
   const { start, totalDays } = computeTimeRange(visibleTasks);
   const rightPanel = document.getElementById('gantt-right');
   const availW = rightPanel ? rightPanel.clientWidth : 800;
-  DAY_WIDTH = Math.min(Math.max(Math.floor(availW / totalDays), MIN_DAY_WIDTH), MAX_DAY_WIDTH);
+  if (manualDayWidth !== null) {
+    DAY_WIDTH = Math.max(1, Math.min(128, manualDayWidth));
+  } else {
+    DAY_WIDTH = Math.min(Math.max(Math.floor(availW / totalDays), MIN_DAY_WIDTH), MAX_DAY_WIDTH);
+  }
 
   viewState.startDate = start;
   viewState.totalDays = totalDays;

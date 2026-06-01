@@ -52,6 +52,9 @@ const I18N = {
     errorClipboardFail: '複製失敗，請確認瀏覽器已授予剪貼簿權限。',
     errorHtml2canvas: '匯出功能需要 html2canvas，請確認網路連線後重試。',
     errorExportFail: '匯出失敗，請重試。',
+    btnFilter: '篩選日期',
+    filterLabel: '顯示範圍',
+    filterReset: '清除',
   },
   en: {
     appTitle: 'Gantt Chart Generator',
@@ -106,6 +109,9 @@ const I18N = {
     errorClipboardFail: 'Copy failed. Please grant clipboard permission in your browser.',
     errorHtml2canvas: 'html2canvas is required. Please check your internet connection.',
     errorExportFail: 'Export failed. Please try again.',
+    btnFilter: 'Date Filter',
+    filterLabel: 'Date Range',
+    filterReset: 'Reset',
   },
 };
 
