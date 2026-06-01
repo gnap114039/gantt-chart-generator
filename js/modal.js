@@ -53,6 +53,10 @@ function openModal(taskId = null, parentId = null) {
     document.getElementById('task-actual-start').value = '';
     document.getElementById('task-actual-end').value = '';
     document.getElementById('task-progress').value = 0;
+    if (parentId) {
+      const parent = getTask(parseInt(parentId));
+      if (parent) document.getElementById('task-color').value = parent.color;
+    }
   }
 
   overlay.style.display = 'flex';
@@ -97,8 +101,13 @@ function renderSubTaskSection(parentId) {
   });
 }
 
+let returnToParentId = null;
+
 function closeModal() {
   document.getElementById('modal-overlay').style.display = 'none';
+  const ret = returnToParentId;
+  returnToParentId = null;
+  if (ret) openModal(ret);
 }
 
 function populateDependencyOptions(excludeId) {
@@ -136,8 +145,9 @@ function initModal() {
   document.getElementById('btn-add-subtask').addEventListener('click', () => {
     const parentId = parseInt(document.getElementById('task-id').value);
     if (parentId) {
-      closeModal();
+      document.getElementById('modal-overlay').style.display = 'none';
       openModal(null, parentId);
+      returnToParentId = parentId;
     }
   });
 
