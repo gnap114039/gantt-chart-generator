@@ -23,7 +23,7 @@ function onMouseDown(e) {
   const barType = idEl.dataset.type || 'plan';
 
   const task = getTask(taskId);
-  if (!task || task.isMilestone) return;
+  if (!task) return;
 
   const svgX = getSvgX(svg, e.clientX);
 

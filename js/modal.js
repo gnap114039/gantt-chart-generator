@@ -33,13 +33,8 @@ function openModal(taskId = null, parentId = null) {
       opt.selected = task.dependencies.includes(parseInt(opt.value));
     });
 
-    // Sub-task section (only for top-level tasks)
-    if (!task.parentId) {
-      renderSubTaskSection(task.id);
-      subTaskSection.style.display = 'block';
-    } else {
-      subTaskSection.style.display = 'none';
-    }
+    renderSubTaskSection(task.id);
+    subTaskSection.style.display = 'block';
   } else {
     title.textContent = t(parentId ? 'modalAddSubtask' : 'modalAddTask');
     deleteBtn.style.display = 'none';
@@ -92,7 +87,10 @@ function renderSubTaskSection(parentId) {
     editBtn.type = 'button';
     editBtn.className = 'btn-subtask-edit';
     editBtn.textContent = t('subtaskEdit');
-    editBtn.addEventListener('click', () => openModal(child.id));
+    editBtn.addEventListener('click', () => {
+      returnStack.push(parentId);
+      openModal(child.id);
+    });
 
     item.appendChild(dot);
     item.appendChild(name);
@@ -101,13 +99,22 @@ function renderSubTaskSection(parentId) {
   });
 }
 
-let returnToParentId = null;
+const returnStack = [];
 
 function closeModal() {
   document.getElementById('modal-overlay').style.display = 'none';
-  const ret = returnToParentId;
-  returnToParentId = null;
-  if (ret) openModal(ret);
+  const ret = returnStack.pop();
+  if (ret !== undefined) openModal(ret);
+}
+
+function getTaskDepth(task) {
+  let depth = 0, cur = task;
+  while (cur.parentId) {
+    cur = getTask(cur.parentId);
+    if (!cur) break;
+    depth++;
+  }
+  return depth;
 }
 
 function populateDependencyOptions(excludeId) {
@@ -117,9 +124,8 @@ function populateDependencyOptions(excludeId) {
     if (task.id === excludeId) return;
     const opt = document.createElement('option');
     opt.value = task.id;
-    opt.textContent = task.parentId
-      ? `  └ ${task.name}`
-      : task.name;
+    const depth = getTaskDepth(task);
+    opt.textContent = depth > 0 ? '  '.repeat(depth) + '└ ' + task.name : task.name;
     select.appendChild(opt);
   });
 }
@@ -145,9 +151,9 @@ function initModal() {
   document.getElementById('btn-add-subtask').addEventListener('click', () => {
     const parentId = parseInt(document.getElementById('task-id').value);
     if (parentId) {
+      returnStack.push(parentId);
       document.getElementById('modal-overlay').style.display = 'none';
       openModal(null, parentId);
-      returnToParentId = parentId;
     }
   });
 
@@ -202,6 +208,6 @@ function initModal() {
   });
 }
 
-window.openEditModal = id => openModal(id);
-window.openAddModal = () => openModal(null);
-window.openAddSubTaskModal = parentId => openModal(null, parentId);
+window.openEditModal = id => { returnStack.length = 0; openModal(id); };
+window.openAddModal = () => { returnStack.length = 0; openModal(null); };
+window.openAddSubTaskModal = parentId => { returnStack.length = 0; openModal(null, parentId); };

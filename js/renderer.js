@@ -82,7 +82,7 @@ function getRowHeight(index, flatItems) {
     return ROW_HEIGHT;
   } else {
     // Last child in group: full height so last child→next parent gap is normal
-    return (!next || next.level === 0) ? LAST_CHILD_ROW_HEIGHT : SUB_ROW_HEIGHT;
+    return (!next || next.level < item.level) ? LAST_CHILD_ROW_HEIGHT : SUB_ROW_HEIGHT;
   }
 }
 function getRowY(index, flatItems) {
@@ -138,15 +138,14 @@ function getFlattenedItems() {
       .map(t => ({ task: t, level: 0, hasChildren: hasChildren(t.id) }));
   }
   const result = [];
-  allTasks.filter(t => !t.parentId).forEach(t => {
-    const hc = hasChildren(t.id);
-    result.push({ task: t, level: 0, hasChildren: hc });
-    if (hc && expandedSet.has(t.id)) {
-      getChildTasks(t.id).forEach(c => {
-        result.push({ task: c, level: 1, hasChildren: false });
-      });
-    }
-  });
+  function collect(parentId, level) {
+    allTasks.filter(t => (t.parentId || null) === parentId).forEach(t => {
+      const hc = hasChildren(t.id);
+      result.push({ task: t, level, hasChildren: hc });
+      if (hc && expandedSet.has(t.id)) collect(t.id, level + 1);
+    });
+  }
+  collect(null, 0);
   return result;
 }
 
@@ -433,17 +432,20 @@ function renderGanttSVGTo(svgId, flatItems, ctx, isDraggable) {
     const connGroup = svgEl('g', { class: 'connectors', style: 'pointer-events: none' });
     flatItems.forEach(({ task, hasChildren: hc }, i) => {
       if (!hc || !expandedSet.has(task.id)) return;
+      const currentLevel = flatItems[i].level;
       const children = [];
       let j = i + 1;
-      while (j < flatItems.length && flatItems[j].level === 1) {
-        children.push(j);
+      while (j < flatItems.length && flatItems[j].level > currentLevel) {
+        if (flatItems[j].level === currentLevel + 1) children.push(j);
         j++;
       }
       if (!children.length) return;
 
       const connX = xCtx(strToDate(task.start), ctx) + 6;
       const parentRh = getRowHeight(i, flatItems);
-      const parentPlanY = Math.round((parentRh - BARS_TOTAL_H) / 2);
+      const parentPlanY = currentLevel === 0
+        ? Math.round((parentRh - BARS_TOTAL_H) / 2)
+        : SUB_BAR_OFFSET;
       const topY = getRowY(i, flatItems) + parentPlanY + PLAN_BAR_H + 1;
       const lastChildIdx = children[children.length - 1];
       const botY = getRowY(lastChildIdx, flatItems) + getRowHeight(lastChildIdx, flatItems) / 2;

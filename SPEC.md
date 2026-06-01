@@ -96,7 +96,7 @@ gantt_chart_generator/
   - 計劃條和實際條位置依列高動態垂直置中
   - **計劃條**（高 18px）：外框樣式，顯示任務名稱
   - **實際條**（高 10px）：實色，含進度填充與百分比文字
-- 里程碑：菱形（旋轉 45° 的正方形），顯示於計劃日期
+- 里程碑：菱形（旋轉 45° 的正方形），顯示於計劃日期，可拖曳移動
 - 依賴關係：貝茲曲線箭頭，連接前置任務結尾與後置任務起點
 
 ### 時間縮放
@@ -112,9 +112,9 @@ gantt_chart_generator/
 - 吸附至天（snap to day）
 - `data-type="plan"` 或 `"actual"` 區分兩條
 
-### 子任務（兩層）
+### 子任務（無限層）
 
-- `parentId` 欄位關聯父子任務，最多兩層（頂層 + 子層）
+- `parentId` 欄位關聯父子任務，支援無限層巢狀
 - **層級模式（hierarchy）**：父任務可展開/收合，子任務縮排顯示於同一圖表
 - **分頁模式（subpanel）**：點擊父任務在下方展開獨立子甘特圖（main-area 58% / 42% 分割）
 - 父任務橫條右側顯示 `N ▸/▾` 標籤，點擊該標籤觸發展開/收合；點擊橫條本體開啟編輯視窗
@@ -242,7 +242,7 @@ id,name,start,end,color,milestone,actualStart,actualEnd,progress,dependencies,pa
 
 ## 已知限制
 
-- 子任務最多兩層（設計上限制）
+- 子任務支援無限層巢狀（subpanel 模式僅展示直接子任務，不做多層巢狀）
 - 圖片匯出依賴 html2canvas CDN，離線環境無法使用
 - HTML 預覽匯出需 HTTP 環境（GitHub Pages 或本地 HTTP server），`file://` 不支援
 - File System Access API 僅 Chrome/Edge 支援；Firefox/Safari 降級為下載

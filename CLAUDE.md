@@ -22,7 +22,7 @@
 | `js/i18n.js` | 中英文翻譯字典、`t(key)` / `setLang()` / `applyLang()` | data.js 之後載入；renderer/modal/export/app 均依賴 `t()` |
 | `js/renderer.js` | SVG 渲染、視圖模式、展開狀態 | `DAY_WIDTH` 和 `viewState` 是全域，drag.js 直接依賴；`svgTheme(light,dark)` 和 `effectiveColor(hex)` 負責 dark mode 色彩適配 |
 | `js/drag.js` | 鼠標拖曳邏輯 | 直接使用 renderer.js 的全域 `DAY_WIDTH`、`viewState`、`strToDate`、`addDays`、`dateToStr` |
-| `js/modal.js` | 任務新增/編輯彈窗 | 含子任務列表管理，`window.openEditModal` / `openAddModal` / `openAddSubTaskModal`；`returnToParentId` 變數控制子任務 modal 關閉後是否自動返回父任務 modal |
+| `js/modal.js` | 任務新增/編輯彈窗 | 含子任務列表管理，`window.openEditModal` / `openAddModal` / `openAddSubTaskModal`；`returnStack`（陣列）記錄 modal 導航路徑，關閉時 pop 回上一層 modal |
 | `js/export.js` | PNG 匯出、剪貼簿複製、HTML 預覽匯出 | 依賴 html2canvas CDN；`exportHtmlPreview()` 需 HTTP 環境（fetch） |
 | `js/app.js` | 初始化、事件綁定、CSV 讀寫 | `currentFileHandle` 存放目前開啟的 File System API handle；`isDirty` 追蹤未儲存狀態；`window._ganttDataChanged` 由 data.js 呼叫；`initTheme()` / `setTheme()` 管理深色模式 |
 | `css/style.css` | 所有樣式 | 無 CSS preprocessor |
