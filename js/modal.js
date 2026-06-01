@@ -28,6 +28,10 @@ function openModal(taskId = null, parentId = null) {
     document.getElementById('task-progress').value = task.progress || 0;
     document.getElementById('progress-display').textContent = (task.progress || 0) + '%';
     deleteBtn.style.display = 'inline-block';
+    const isSame = !!task.actualStart && task.actualStart === task.start && task.actualEnd === task.end;
+    document.getElementById('task-actual-same').checked = isSame;
+    document.getElementById('task-actual-start').disabled = isSame;
+    document.getElementById('task-actual-end').disabled = isSame;
 
     Array.from(document.getElementById('task-dependencies').options).forEach(opt => {
       opt.selected = task.dependencies.includes(parseInt(opt.value));
@@ -138,6 +142,24 @@ function initModal() {
     document.getElementById('progress-display').textContent = e.target.value + '%';
   });
 
+  function syncActualFromPlan() {
+    document.getElementById('task-actual-start').value = document.getElementById('task-start').value;
+    document.getElementById('task-actual-end').value = document.getElementById('task-end').value;
+  }
+
+  document.getElementById('task-actual-same').addEventListener('change', e => {
+    const checked = e.target.checked;
+    document.getElementById('task-actual-start').disabled = checked;
+    document.getElementById('task-actual-end').disabled = checked;
+    if (checked) syncActualFromPlan();
+  });
+
+  ['task-start', 'task-end'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      if (document.getElementById('task-actual-same').checked) syncActualFromPlan();
+    });
+  });
+
   overlay.addEventListener('click', e => {
     if (e.target === overlay) closeModal();
   });
@@ -150,11 +172,27 @@ function initModal() {
 
   document.getElementById('btn-add-subtask').addEventListener('click', () => {
     const parentId = parseInt(document.getElementById('task-id').value);
-    if (parentId) {
-      returnStack.push(parentId);
-      document.getElementById('modal-overlay').style.display = 'none';
-      openModal(null, parentId);
+    if (!parentId) return;
+    const name = document.getElementById('task-name').value.trim();
+    const start = document.getElementById('task-start').value;
+    const end = document.getElementById('task-end').value;
+    const isMilestone = document.getElementById('task-milestone').checked;
+    if (name && start && end) {
+      updateTask(parentId, {
+        name, start, end: isMilestone ? start : end,
+        color: document.getElementById('task-color').value,
+        isMilestone,
+        actualStart: document.getElementById('task-actual-start').value || null,
+        actualEnd: document.getElementById('task-actual-end').value || null,
+        progress: parseInt(document.getElementById('task-progress').value) || 0,
+        dependencies: Array.from(document.getElementById('task-dependencies').selectedOptions).map(o => parseInt(o.value)),
+        parentId: document.getElementById('task-parent-id').value ? parseInt(document.getElementById('task-parent-id').value) : null,
+      });
+      render();
     }
+    returnStack.push(parentId);
+    document.getElementById('modal-overlay').style.display = 'none';
+    openModal(null, parentId);
   });
 
   document.getElementById('btn-delete-task').addEventListener('click', () => {
