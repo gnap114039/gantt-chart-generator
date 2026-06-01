@@ -83,7 +83,7 @@ function initApp() {
     if (!el) return;
     const id = parseInt(el.getAttribute('data-id'));
     if (!id) return;
-    if (hasChildren(id)) window.toggleExpand(id);
+    if (el.getAttribute('data-type') === 'toggle') window.toggleExpand(id);
     else window.openEditModal(id);
   });
 

@@ -314,13 +314,13 @@ function renderBarsGroup(flatItems, ctx, isDraggable) {
           x: labelX - 4, y: planY - 1,
           width: 38, height: PLAN_BAR_H + 2,
           fill: 'transparent',
-          'data-id': task.id, style: 'cursor: pointer',
+          'data-id': task.id, 'data-type': 'toggle', style: 'cursor: pointer',
         }));
         const countLabel = svgEl('text', {
           x: labelX, y: labelY,
           'font-size': 10, fill: task.color,
           'font-family': 'system-ui,sans-serif', 'font-weight': '600',
-          'data-id': task.id, style: 'cursor: pointer',
+          'data-id': task.id, 'data-type': 'toggle', style: 'cursor: pointer',
         }, `${childCount} ${isExpanded ? '▾' : '▸'}`);
         g.appendChild(countLabel);
 
