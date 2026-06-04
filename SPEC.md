@@ -153,9 +153,19 @@ gantt_chart_generator/
 - 計劃條右上角顯示圓形 ✓ badge（顏色同任務色，白色打勾）
 - 左側任務清單名稱顯示刪除線（`text-decoration: line-through`）
 
+### 復原（Undo）
+
+- 工具列「↩ 復原」按鈕或 `Ctrl+Z` / `Cmd+Z` 還原上一步資料變更
+- 每次 `saveTasks()` 呼叫前自動保存快照（最多 50 筆，超過自動移除最舊的）
+- 適用操作：新增/編輯/刪除任務、拖曳移動/調整日期、拖曳排序
+- modal 開啟時不觸發（避免 modal 顯示過期資料）；input/textarea 內的 Ctrl+Z 由瀏覽器自行處理
+- CSV 匯入整體視為一個操作（可一步 Ctrl+Z 還原全部）；sample data 初始化不可還原
+- 按鈕在無歷史時為 disabled
+
 ### 鍵盤操作
 
 - `Esc`：關閉任務編輯 modal（等同點擊取消或背景遮罩）
+- `Ctrl+Z` / `Cmd+Z`：復原上一步（modal 未開啟，且焦點不在輸入欄位時有效）
 
 ### 圖片匯出
 

@@ -4,6 +4,35 @@ const PROJECT_NAME_KEY = 'gantt_project_name';
 let tasks = [];
 let nextId = 1;
 
+// ── Undo history ─────────────────────────────────────────────────────────────
+const _UNDO_LIMIT = 50;
+let _history = [];
+let _suspendHistory = false;
+let _lastSnapshot = null;
+
+function canUndo() { return _history.length > 0; }
+
+function setSuspendHistory(val) { _suspendHistory = val; }
+
+function captureUndoSnapshot() {
+  if (_lastSnapshot) {
+    _history.push(_lastSnapshot);
+    if (_history.length > _UNDO_LIMIT) _history.shift();
+  }
+  _lastSnapshot = { tasks: JSON.parse(JSON.stringify(tasks)), nextId };
+}
+
+function undoLastAction() {
+  if (!_history.length) return false;
+  const prev = _history.pop();
+  tasks = prev.tasks;
+  nextId = prev.nextId;
+  _lastSnapshot = { tasks: JSON.parse(JSON.stringify(tasks)), nextId };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, nextId }));
+  if (typeof window._ganttDataChanged === 'function') window._ganttDataChanged();
+  return true;
+}
+
 function getProjectName() {
   return localStorage.getItem(PROJECT_NAME_KEY) || '專案名稱';
 }
@@ -23,9 +52,15 @@ function loadTasks() {
     tasks = [];
     nextId = 1;
   }
+  _lastSnapshot = { tasks: JSON.parse(JSON.stringify(tasks)), nextId };
 }
 
 function saveTasks() {
+  if (!_suspendHistory && _lastSnapshot) {
+    _history.push(_lastSnapshot);
+    if (_history.length > _UNDO_LIMIT) _history.shift();
+  }
+  _lastSnapshot = { tasks: JSON.parse(JSON.stringify(tasks)), nextId };
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, nextId }));
   if (typeof window._ganttDataChanged === 'function') window._ganttDataChanged();
 }

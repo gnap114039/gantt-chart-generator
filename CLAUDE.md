@@ -18,10 +18,10 @@
 
 | 檔案 | 職責 | 注意事項 |
 |------|------|----------|
-| `js/data.js` | 資料模型、localStorage、CRUD | 最先載入，其他檔案依賴此檔案的全域函式 |
+| `js/data.js` | 資料模型、localStorage、CRUD | 最先載入，其他檔案依賴此檔案的全域函式；`_history`（快照陣列）+ `_suspendHistory` 實作 undo；`saveTasks()` 每次自動 push 前一快照；`undoLastAction()` / `canUndo()` 供外部呼叫 |
 | `js/i18n.js` | 中英文翻譯字典、`t(key)` / `setLang()` / `applyLang()` | data.js 之後載入；renderer/modal/export/app 均依賴 `t()` |
-| `js/renderer.js` | SVG 渲染、視圖模式、展開狀態、縮放、日期篩選 | `DAY_WIDTH` 和 `viewState` 是全域，drag.js 直接依賴；`svgTheme(light,dark)` 和 `effectiveColor(hex)` 負責 dark mode 色彩適配；`manualDayWidth`（null=自動，數字=手動，1–128px）控制縮放；`dateFilterStart/End`（`'YYYY-MM-DD'` 或 null）控制顯示範圍；`getZoomMode(dw)` 回傳 `'day'/'week'/'month'`；表頭渲染由 `_renderHeaderDay/Week/Month` 分別實作 |
-| `js/drag.js` | 鼠標拖曳邏輯 | 直接使用 renderer.js 的全域 `DAY_WIDTH`、`viewState`、`strToDate`、`addDays`、`dateToStr` |
+| `js/renderer.js` | SVG 渲染、視圖模式、展開狀態、縮放、日期篩選 | `DAY_WIDTH` 和 `viewState` 是全域，drag.js 直接依賴；`svgTheme(light,dark)` 和 `effectiveColor(hex)` 負責 dark mode 色彩適配；`manualDayWidth`（null=自動，數字=手動，1–128px）控制縮放；`dateFilterStart/End`（`'YYYY-MM-DD'` 或 null）控制顯示範圍；`getZoomMode(dw)` 回傳 `'day'/'week'/'month'`；表頭渲染由 `_renderHeaderDay/Week/Month` 分別實作；`timeline-header` 的 width 在 `renderTimelineHeaderTo()` 設為 `ctx.svgWidth`，使其與甘特 SVG 在同一 scroll container 中自然同步水平捲動（不需 translateX） |
+| `js/drag.js` | 鼠標拖曳邏輯 | 直接使用 renderer.js 的全域 `DAY_WIDTH`、`viewState`、`strToDate`、`addDays`、`dateToStr`；拖曳開始時呼叫 `setSuspendHistory(true)`，首次實際移動（`daysDelta !== 0`）時才呼叫 `captureUndoSnapshot()`（避免純點擊污染 history）；`onMouseUp` 不呼叫 `render()`（否則會在 click 事件前替換 SVG DOM，導致點擊橫條無法開啟 modal） |
 | `js/modal.js` | 任務新增/編輯彈窗 | 含子任務列表管理，`window.openEditModal` / `openAddModal` / `openAddSubTaskModal`；`returnStack`（陣列）記錄 modal 導航路徑，關閉時 pop 回上一層 modal |
 | `js/export.js` | PNG 匯出、剪貼簿複製、HTML 預覽匯出 | 依賴 html2canvas CDN；`exportHtmlPreview()` 需 HTTP 環境（fetch） |
 | `js/app.js` | 初始化、事件綁定、CSV 讀寫 | `currentFileHandle` 存放目前開啟的 File System API handle；`isDirty` 追蹤未儲存狀態；`window._ganttDataChanged` 由 data.js 呼叫；`initTheme()` / `setTheme()` 管理深色模式；縮放按鈕（`btn-zoom-in/out/reset`）修改 `manualDayWidth`；篩選列（`btn-toggle-filter`、`filter-start/end`、`btn-filter-reset`）修改 `dateFilterStart/End` |

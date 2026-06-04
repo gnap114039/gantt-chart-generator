@@ -698,7 +698,8 @@ function renderSubPanel() {
 
   const subRight = document.getElementById('sub-gantt-right');
   const subHeader = document.getElementById('sub-timeline-header');
-  subRight.onscroll = () => { subHeader.style.transform = `translateX(-${subRight.scrollLeft}px)`; };
+  subHeader.style.transform = '';
+  subRight.onscroll = null;
 
   // Click on sub SVG opens edit modal
   const subSvg = document.getElementById('sub-gantt-svg');
@@ -763,12 +764,16 @@ function render() {
   // Sync mode toggle button state
   document.getElementById('btn-mode-hierarchy')?.classList.toggle('active', viewMode === 'hierarchy');
   document.getElementById('btn-mode-subpanel')?.classList.toggle('active', viewMode === 'subpanel');
+
+  const undoBtn = document.getElementById('btn-undo');
+  if (undoBtn) undoBtn.disabled = !canUndo();
 }
 
 function syncScroll() {
   const right = document.getElementById('gantt-right');
   const header = document.getElementById('timeline-header');
   if (right && header) {
-    right.onscroll = () => { header.style.transform = `translateX(-${right.scrollLeft}px)`; };
+    header.style.transform = '';
+    right.onscroll = null;
   }
 }

@@ -57,12 +57,23 @@ function initApp() {
   document.getElementById('btn-export-html').addEventListener('click', exportHtmlPreview);
   document.getElementById('csv-input').addEventListener('change', handleCsvImport);
 
-  // Ctrl+S / Cmd+S
+  // Keyboard shortcuts
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
       saveCsvFile();
     }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      const tag = document.activeElement.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement.isContentEditable) return;
+      if (document.getElementById('modal-overlay').style.display !== 'none') return;
+      e.preventDefault();
+      if (undoLastAction()) render();
+    }
+  });
+
+  document.getElementById('btn-undo').addEventListener('click', () => {
+    if (undoLastAction()) render();
   });
 
   // Mode toggle
@@ -326,6 +337,8 @@ function parseCsvLine(line) {
 }
 
 function parseCsv(text) {
+  captureUndoSnapshot();
+  setSuspendHistory(true);
   const lines = text.replace(/\r/g, '').replace(/^﻿/, '').split('\n').filter(l => l.trim());
 
   let startLine = 0;
@@ -339,6 +352,7 @@ function parseCsv(text) {
   const col = k => header.indexOf(k);
 
   if (col('name') === -1 || col('start') === -1 || col('end') === -1) {
+    setSuspendHistory(false);
     alert(t('errorCsvFormat')); return;
   }
 
@@ -396,9 +410,11 @@ function parseCsv(text) {
       });
     }
   }
+  setSuspendHistory(false);
 }
 
 function seedSampleData() {
+  setSuspendHistory(true);
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const fmt = d => d.toISOString().slice(0, 10);
   const off = n => { const d = new Date(today); d.setDate(d.getDate() + n); return fmt(d); };
@@ -413,6 +429,7 @@ function seedSampleData() {
   addTask({ name: '前端實作', start: off(-1), end: off(7), color: '#16B364', actualStart: off(0), progress: 60, parentId: t3.id });
   addTask({ name: '後端 API', start: off(0), end: off(10), color: '#16B364', actualStart: off(1), progress: 30, parentId: t3.id });
   addTask({ name: '整合測試', start: off(9), end: off(12), color: '#16B364', parentId: t3.id });
+  setSuspendHistory(false);
 }
 
 document.addEventListener('DOMContentLoaded', initApp);

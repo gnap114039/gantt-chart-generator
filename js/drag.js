@@ -1,4 +1,5 @@
 let dragState = null;
+let _dragSnapshotDone = false;
 
 function initDrag() {
   const svg = document.getElementById('gantt-svg');
@@ -41,6 +42,8 @@ function onMouseDown(e) {
     origStart, origEnd,
   };
 
+  _dragSnapshotDone = false;
+  setSuspendHistory(true);
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
   e.preventDefault();
@@ -51,6 +54,11 @@ function onMouseMove(e) {
   const svg = document.getElementById('gantt-svg');
   const svgX = getSvgX(svg, e.clientX);
   const daysDelta = Math.round((svgX - dragState.startMouseX) / DAY_WIDTH);
+
+  if (daysDelta !== 0 && !_dragSnapshotDone) {
+    captureUndoSnapshot();
+    _dragSnapshotDone = true;
+  }
 
   const task = getTask(dragState.taskId);
   if (!task) return;
@@ -80,6 +88,8 @@ function onMouseMove(e) {
 }
 
 function onMouseUp() {
+  setSuspendHistory(false);
+  _dragSnapshotDone = false;
   dragState = null;
   document.removeEventListener('mousemove', onMouseMove);
   document.removeEventListener('mouseup', onMouseUp);
