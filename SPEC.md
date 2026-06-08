@@ -222,6 +222,8 @@ id,name,start,end,color,milestone,actualStart,actualEnd,progress,dependencies,pa
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
+瀏覽器 tab favicon：📊（emoji inline SVG data URI，定義於 `index.html` `<head>`）
+
 ---
 
 ## 渲染常數（renderer.js）

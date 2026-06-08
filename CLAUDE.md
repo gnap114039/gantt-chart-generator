@@ -26,7 +26,7 @@
 | `js/export.js` | PNG 匯出、剪貼簿複製、HTML 預覽匯出 | 依賴 html2canvas CDN；`exportHtmlPreview()` 需 HTTP 環境（fetch） |
 | `js/app.js` | 初始化、事件綁定、CSV 讀寫 | `currentFileHandle` 存放目前開啟的 File System API handle；`isDirty` 追蹤未儲存狀態；`window._ganttDataChanged` 由 data.js 呼叫；`initTheme()` / `setTheme()` 管理深色模式；縮放按鈕（`btn-zoom-in/out/reset`）修改 `manualDayWidth`；篩選列（`btn-toggle-filter`、`filter-start/end`、`btn-filter-reset`）修改 `dateFilterStart/End` |
 | `css/style.css` | 所有樣式 | 無 CSS preprocessor |
-| `index.html` | HTML 結構 | script 載入順序：data → i18n → renderer → drag → modal → export → app |
+| `index.html` | HTML 結構 | script 載入順序：data → i18n → renderer → drag → modal → export → app；favicon 以 emoji inline SVG data URI 定義於 `<head>` |
 
 ## 常見開發任務
 
